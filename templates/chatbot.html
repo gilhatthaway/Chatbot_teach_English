@@ -144,19 +144,21 @@
         </div>
     </div>
 
-    <script>
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
-        const chatForm = document.getElementById('chatForm');
-        const typingIndicator = document.getElementById('typingIndicator');
-        document.addEventListener("DOMContentLoaded", () => {
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const chatForm = document.getElementById('chatForm');
+    const typingIndicator = document.getElementById('typingIndicator');
+
+    document.addEventListener("DOMContentLoaded", () => {
         const username = localStorage.getItem("username");
+        const id_user = localStorage.getItem("id_user");
         const role = localStorage.getItem("role") || "Người dùng";
 
-        if (!username) {
+        if (!username || !id_user) {
             alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
-            window.location.href = "/"; // quay về trang login
-            return; // dừng các thao tác tiếp theo
+            window.location.href = "/"; 
+            return;
         }
 
         // Nếu đã login, hiển thị username
@@ -165,75 +167,86 @@
 
     // Xử lý logout
     document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.removeItem("username");
-        localStorage.removeItem("role");
+        localStorage.clear();  // Xoá hết username, role, id_user
         window.location.href = "/";
     });
 
-        function addMessage(message, isUser = false, customClass = null) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex items-start space-x-3 message-animation ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
+    // Hàm thêm tin nhắn
+    function addMessage(message, isUser = false, customClass = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex items-start space-x-3 message-animation ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
 
-            const avatar = document.createElement('div');
-            avatar.className = `w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? 'bg-sky-500' : 'bg-gray-400'}`;
-            avatar.innerHTML = `<span class="text-white text-sm">${isUser ? '👤' : '🤖'}</span>`;
+        const avatar = document.createElement('div');
+        avatar.className = `w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? 'bg-sky-500' : 'bg-gray-400'}`;
+        avatar.innerHTML = `<span class="text-white text-sm">${isUser ? '👤' : '🤖'}</span>`;
 
-            const messageBubble = document.createElement('div');
-            let bubbleClass = isUser ? 'user-message' : 'bot-message';
-            if (customClass) bubbleClass = customClass;
-            messageBubble.className = `message-bubble ${bubbleClass} p-3 rounded-2xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'} shadow-sm`;
-            messageBubble.innerHTML = `<p>${message}</p>`;
+        const messageBubble = document.createElement('div');
+        let bubbleClass = isUser ? 'user-message' : 'bot-message';
+        if (customClass) bubbleClass = customClass;
+        messageBubble.className = `message-bubble ${bubbleClass} p-3 rounded-2xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'} shadow-sm`;
+        messageBubble.innerHTML = `<p>${message}</p>`;
 
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(messageBubble);
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(messageBubble);
 
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        typingIndicator.classList.remove('hidden');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        typingIndicator.classList.add('hidden');
+    }
+
+    // Gửi tin nhắn
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        addMessage(message, true);
+        messageInput.value = '';
+        showTypingIndicator();
+
+        const id_user = localStorage.getItem("id_user"); // ✅ lấy từ localStorage
+        if (!id_user) {
+            hideTypingIndicator();
+            addMessage("❌ Không tìm thấy ID User. Vui lòng đăng nhập lại.");
+            return;
         }
 
-        function showTypingIndicator() {
-            typingIndicator.classList.remove('hidden');
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        try {
+            const response = await fetch('http://localhost:5000/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message, 
+                    id_user: parseInt(id_user) // ✅ ép kiểu int để backend nhận chuẩn
+                })
+            });
+
+            const data = await response.json();
+            hideTypingIndicator();
+
+            if (data.response_english) addMessage(data.response_english, false, 'bot-message-english');
+            if (data.explanation_vietnamese) addMessage(data.explanation_vietnamese, false, 'bot-message-vietnamese');
+            if (data.correction) addMessage("✅ Correction: " + data.correction, false, 'bot-message-correction');
+
+        } catch (err) {
+            hideTypingIndicator();
+            addMessage("❌ Lỗi khi kết nối chatbot: " + err.message);
         }
+    });
 
-        function hideTypingIndicator() {
-            typingIndicator.classList.add('hidden');
-        }
-
-        chatForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            addMessage(message, true);
-            messageInput.value = '';
-
-            showTypingIndicator();
-
-            try {
-                const response = await fetch('http://localhost:5000/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
-                });
-
-                const data = await response.json();
-                hideTypingIndicator();
-
-                if (data.response_english) addMessage(data.response_english, false, 'bot-message-english');
-                if (data.explanation_vietnamese) addMessage(data.explanation_vietnamese, false, 'bot-message-vietnamese');
-                if (data.correction) addMessage("✅ Correction: " + data.correction, false, 'bot-message-correction');
-
-            } catch (err) {
-                hideTypingIndicator();
-                addMessage("❌ Lỗi khi kết nối chatbot: " + err.message);
-            }
-        });
-
-        messageInput.focus();
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') chatForm.dispatchEvent(new Event('submit'));
-        });
-    </script>
+    // Enter để gửi tin nhắn
+    messageInput.focus();
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') chatForm.dispatchEvent(new Event('submit'));
+    });
+</script>
 </body>
 </html>

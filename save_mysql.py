@@ -213,7 +213,7 @@ def login_user(email, password):
         print("❌ Lỗi khi kiểm tra user:", e)
         return None
 
-def insert_lesson(id_user, topic, data_lesson, model_ai="gemini 2.0"):
+def insert_ai_lesson(id_user, topic, data_lesson, model_ai="gemini 2.0"):
     """ lưu lại bài học của user vào bảng lessons """
     connection = connect_to_mysql()
     if connection is None:

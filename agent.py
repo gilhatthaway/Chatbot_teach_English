@@ -66,7 +66,7 @@ def voice_page():
 def lesson_page():
     return render_template("lesson.html")
 
-# Trang chatbot
+# TrangAI  chatbot
 @app.route('/chatbot')
 def chatbot_page():
     return render_template("chatbot.html")
@@ -87,44 +87,49 @@ def ad_lesson():
 def ad_query():
     return render_template("ad_query.html")
 
-
+#///////////////////////////////////////// AI Lesson TẠO BÀI HỌC //////////////////////////////////
 # API tạo bài học
-@app.route('/generate/lesson/<topic>')
+# API tạo bài học
+@app.route('/generate/lesson/<topic>', methods=["POST"])
 def generate_content(topic):
     try:
+        # Lấy dữ liệu từ request JSON
+        data = request.get_json()
+        id_user = data.get("id_user")
+
+        if not id_user:
+            return jsonify({"error": "Thiếu id_user"}), 400
+
         # Bước 1: Tạo bài học ban đầu từ AI
-        print(f"🚀 Bước 1: Tạo bài học ban đầu cho chủ đề '{topic}'")
+        print(f"🚀 Bước 1: Tạo bài học ban đầu cho user {id_user}, chủ đề '{topic}'")
         lesson_data = agent.generate("lesson", topic=topic)
         content = lesson_data.get('content', '{}')
         print("🔥 AI raw content:", content)
 
+        # --- parse JSON từ AI ---
         try:
-            # Xử lý trường hợp AI trả về markdown code blocks
             if "```json" in content:
-                # Tìm và extract JSON từ markdown
                 start = content.find("```json") + 7
                 end = content.find("```", start)
                 if end != -1:
                     json_str = content[start:end].strip()
                     ai_json = json.loads(json_str)
                 else:
-                    ai_json = {"topic": topic}  
+                    ai_json = {"topic": topic}
             elif "```" in content:
-                # Tìm JSON trong code blocks thông thường
                 start = content.find("```") + 3
                 end = content.find("```", start)
                 if end != -1:
                     json_str = content[start:end].strip()
                     ai_json = json.loads(json_str)
                 else:
-                    ai_json = {"topic": topic}  
+                    ai_json = {"topic": topic}
             else:
-                # Parse JSON thông thường
                 ai_json = json.loads(content)
         except json.JSONDecodeError as e:
             print(f"❌ JSON Parse Error: {e}")
             print(f"Raw content: {content}")
-            ai_json = {"topic": topic} 
+            ai_json = {"topic": topic}
 
         # Bước 2: Chuẩn hóa cấu trúc và tạo exercises mẫu
         print("🔧 Bước 2: Chuẩn hóa cấu trúc và tạo exercises")
@@ -134,13 +139,12 @@ def generate_content(topic):
         # Bước 3: Đưa bài học đã chuẩn hóa qua AI lần 2 để tối ưu hóa
         print("🎯 Bước 3: Tối ưu hóa bài học qua AI")
         lesson_json_str = json.dumps(standardized_lesson, ensure_ascii=False, indent=2)
-        
+
         final_lesson_data = agent.generate("finalize_lesson", lesson_data=lesson_json_str)
         final_content = final_lesson_data.get('content', '{}')
         print("🌟 AI final content:", final_content)
 
         try:
-            # Parse JSON cuối cùng từ AI - xử lý markdown code blocks
             if "```json" in final_content:
                 start = final_content.find("```json") + 7
                 end = final_content.find("```", start)
@@ -159,49 +163,61 @@ def generate_content(topic):
                     raise json.JSONDecodeError("No closing ``` found", final_content, 0)
             else:
                 final_result = json.loads(final_content)
-            
+
             print("🎉 Final lesson JSON:", json.dumps(final_result, ensure_ascii=False, indent=2))
+
+            # 🔹 chỗ này bạn có thể gọi insert_ai_lesson(id_user, json.dumps(final_result, ensure_ascii=False)) để lưu DB
+            insert_ai_lesson(id_user, topic,final_content, "gemini 2.5")
+
             return jsonify(final_result)
         except json.JSONDecodeError as e:
-            # Nếu AI không trả về JSON hợp lệ, dùng kết quả đã chuẩn hóa
             print(f"⚠️ AI không trả về JSON hợp lệ: {e}")
-            print("🔄 Sử dụng kết quả đã chuẩn hóa")
             return jsonify(standardized_lesson)
 
     except Exception as e:
         print(f"❌ Error generating content: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
         
-#//////////////////////////////// CHATBOT DẠY HỌC ////////////////////////////////////////////////////
+#//////////////////////////////// AI CHATBOT DẠY HỌC ////////////////////////////////////////////////////
+
 
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     student_input = data.get("message", "")
+    id_user = data.get("id_user")
+
+    if not id_user or not student_input:
+        print ("❌ Thiếu id_user hoặc message")
+        return jsonify({"error": "Thiếu id_user hoặc message"}), 400
 
     chat_prompt = CHATBOT_PROMPT.replace("{student_input}", student_input)
     response = agent.llm.invoke(chat_prompt)
     print("Raw response:", response)
 
     content = response.content
-
-    # Loại bỏ ```json, ```, và dấu * thừa
     cleaned = re.sub(r"```json\s*|\s*```|\*+", "", content).strip()
+    chat_ai = cleaned  # lưu tạm để insert DB
 
-    # Parse JSON
     try:
         parsed = json.loads(cleaned)
     except json.JSONDecodeError:
         parsed = {"response_english": cleaned}
 
-    # Chuẩn hóa kết quả (null -> "")
     result = {
         "response_english": parsed.get("response_english") or "",
         "explanation_vietnamese": parsed.get("explanation_vietnamese") or "",
         "correction": parsed.get("correction") or ""
     }
 
+    # 👉 Insert vào DB ngay khi chat
+    ok = insert_ai_chat(id_user, student_input, chat_ai, "gemini 1.5")
+    if not ok:
+        return jsonify({"error": "Không lưu được dữ liệu"}), 500
+
     return jsonify(result)
+
 
 #/////////////////////////// CHẠY ĐĂNG NHẬP mysql /////////////////////////
 
@@ -248,8 +264,9 @@ def login():
                 "status": "success",
                 "message": "Đăng nhập thành công!",
                 "redirect": "/home",
-                "username": user["username"],  # 🔹 trả username
-                "role": user["role"]           # 🔹 trả role
+                "id_user": user["id"],       # 🔹 trả id_user
+                "username": user["username"],# 🔹 trả username
+                "role": user["role"]         # 🔹 trả role
             }), 200
         else:
             return jsonify({"status": "error", "message": "Sai email hoặc mật khẩu!"}), 401
@@ -367,7 +384,7 @@ filename = "input.wav"
 def speak(text):
     try:
         out_file = "reply.mp3"
-        tts = gTTS(text=text, lang="en", lang_check=True)
+        tts = gTTS(text=text, lang="en")
         tts.save(out_file)
         pygame.mixer.init()
         pygame.mixer.music.load(out_file)
@@ -384,27 +401,40 @@ def speak(text):
 # ====== 3. API start/stop record ======
 @app.route("/start_record", methods=["POST"])
 def start_record():
-    global is_recording, recording
+    global is_recording, recording, id_user
+    data = request.get_json()
+    id_user = data.get("id_user")   # 🔹 lấy id_user từ frontend
+
+    if not id_user:
+        print("❌ Thiếu id_user")
+        return jsonify({"status": "error", "message": "Thiếu id_user"}), 400
+
     if is_recording:
+        print("❌ Đang ghi âm rồi!")
         return jsonify({"status": "error", "message": "Đang ghi âm rồi!"}), 400
 
-    print("🎤 Bắt đầu ghi âm...")
-    recording = sd.rec(int(10 * fs), samplerate=fs, channels=1, dtype="int16")  
+    print(f"🎤 Bắt đầu ghi âm cho user {id_user}")
+    recording = sd.rec(int(10 * fs), samplerate=fs, channels=1, dtype="int16")
     is_recording = True
     return jsonify({"status": "ok", "message": "Bắt đầu ghi âm"})
 
 @app.route("/stop_record", methods=["POST"])
 def stop_record():
-    global is_recording, recording
+    global is_recording, recording, id_user
+    data = request.get_json()
+    id_user = data.get("id_user")   # 🔹 lấy id_user từ frontend
+
+    if not id_user:
+        return jsonify({"status": "error", "message": "Thiếu id_user"}), 400
+
     if not is_recording:
         return jsonify({"status": "error", "message": "Chưa có ghi âm nào đang chạy!"}), 400
 
     sd.stop()
     wav.write(filename, fs, recording)
     is_recording = False
-    print("🛑 Dừng ghi âm, lưu vào", filename)
+    print(f"🛑 Dừng ghi âm, lưu vào {filename} cho user {id_user}")
 
-    # Nhận diện giọng nói
     r = sr.Recognizer()
     with sr.AudioFile(filename) as source:
         audio = r.record(source)
@@ -417,13 +447,14 @@ def stop_record():
     except sr.RequestError as e:
         return jsonify({"status": "error", "message": f"Lỗi Google SR: {e}"}), 500
 
-
     voice_prompt = VOICE_PROMPT.replace("{student_input}", user_text)
     response = agent.llm.invoke(voice_prompt)
-    bot_reply = response.content 
+    bot_reply = response.content
     print("🤖 Bot:", bot_reply)
 
-    # Bot nói lại
+    # 🔹 Lưu hội thoại vào DB kèm id_user
+    insert_ai_voice(id_user, user_text, bot_reply, "gemini 1.5")
+
     speak(bot_reply)
 
     return jsonify({
@@ -431,6 +462,7 @@ def stop_record():
         "user_text": user_text,
         "bot_reply": bot_reply
     })
+
 
 #///////////////////////////////////////////////////////////////////////////////
 if __name__ == "__main__":

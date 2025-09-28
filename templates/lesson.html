@@ -60,6 +60,7 @@
         document.addEventListener("DOMContentLoaded", () => {
         const username = localStorage.getItem("username");
         const role = localStorage.getItem("role") || "Người dùng";
+        const id_user = localStorage.getItem("id_user");
 
         if (!username) {
             alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
@@ -73,8 +74,7 @@
 
     // Xử lý logout
         document.getElementById("logoutBtn").addEventListener("click", () => {
-            localStorage.removeItem("username");
-            localStorage.removeItem("role");
+            localStorage.clear();
             window.location.href = "/";
     });
 </script>
@@ -341,23 +341,28 @@
 
         async function generateLesson() {
             const topic = document.getElementById('topicInput').value.trim();
-            
+            const id_user = localStorage.getItem("id_user"); // 🔹 Lấy id_user từ localStorage
+
             if (!topic) {
                 showError('Vui lòng nhập chủ đề bạn muốn học');
                 return;
             }
-
+            if (!id_user) {
+                showError('Thiếu thông tin người dùng, vui lòng đăng nhập lại!');
+                return;
+            }
 
             showLoading(true);
             hideError();
 
             try {
-                // Sử dụng endpoint mới từ backend
+                // Gọi API POST thay vì GET
                 const response = await fetch(`http://localhost:5000/generate/lesson/${encodeURIComponent(topic)}`, {
-                    method: 'GET',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                    },
+                    body: JSON.stringify({ id_user }) // 🔹 Gửi id_user trong body
                 });
 
                 if (!response.ok) {
@@ -366,26 +371,18 @@
 
                 const data = await response.json();
                 console.log('📊 Received data:', data);
-                
+
                 // Validate data structure
                 if (!data || typeof data !== 'object') {
                     throw new Error('Dữ liệu không hợp lệ');
                 }
-                
+
                 // Đảm bảo các mảng tồn tại
-                if (!Array.isArray(data.vocabulary)) {
-                    data.vocabulary = [];
-                }
-                if (!Array.isArray(data.example_sentences)) {
-                    data.example_sentences = [];
-                }
-                if (!Array.isArray(data.conversation)) {
-                    data.conversation = [];
-                }
-                if (!Array.isArray(data.exercises)) {
-                    data.exercises = [];
-                }
-                
+                if (!Array.isArray(data.vocabulary)) data.vocabulary = [];
+                if (!Array.isArray(data.example_sentences)) data.example_sentences = [];
+                if (!Array.isArray(data.conversation)) data.conversation = [];
+                if (!Array.isArray(data.exercises)) data.exercises = [];
+
                 console.log('✅ Data validated:', {
                     vocabulary: data.vocabulary.length,
                     examples: data.example_sentences.length,
@@ -396,16 +393,17 @@
                 lessonData = data;
                 displayLessonData();
                 showLoading(false);
-                
+
                 // Update header with the topic
                 document.querySelector('h1').textContent = `📚 Bài Tập Tiếng Anh - ${topic}`;
-                
+
             } catch (error) {
                 showLoading(false);
                 showError(`Lỗi khi tạo bài học: ${error.message}`);
                 console.error('Generate lesson error:', error);
             }
         }
+
 
         // Hiển thị username từ localStorage
         document.addEventListener("DOMContentLoaded", () => {

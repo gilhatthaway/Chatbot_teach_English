@@ -400,6 +400,7 @@
                     // ✅ Nếu login thành công thì chuyển đến /home
                     localStorage.setItem("username", data.username);
                     localStorage.setItem("role", data.role);
+                    localStorage.setItem("id_user", data.id_user); // 🔹 lưu id_user vào localStorage
                     // alert("Đăng nhập thành công! Chào " + data.username + " (" + data.role + ")");
                     window.location.href = "/home";
                 } else {

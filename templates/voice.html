@@ -454,187 +454,148 @@
     </footer>
 
     <script>
-        // Create floating particles
-        function createParticles() {
-            const particlesContainer = document.getElementById('particles');
-            const particleCount = 50;
+    // Create floating particles
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 50;
 
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.top = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 6 + 's';
-                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
-                particlesContainer.appendChild(particle);
-            }
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 6 + 's';
+            particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            particlesContainer.appendChild(particle);
         }
+    }
 
-        // Voice interaction logic
-        class VoiceAssistant {
-            constructor() {
-                this.isRecording = false;
-                this.voiceButton = document.getElementById('voiceButton');
-                this.micIcon = document.getElementById('micIcon');
-                this.buttonText = document.getElementById('buttonText');
-                this.statusText = document.getElementById('statusText');
-                this.responseArea = document.getElementById('responseArea');
-                this.userSpeech = document.getElementById('userSpeech');
-                this.aiResponse = document.getElementById('aiResponse');
-                this.waves = document.querySelectorAll('.wave');
-                
-                this.init();
-            }
-
-            init() {
-                this.voiceButton.addEventListener('click', () => this.toggleRecording());
-                createParticles();
-            }
-
-            toggleRecording() {
-                if (!this.isRecording) {
-                    this.startRecording();
-                } else {
-                    this.stopRecording();
-                }
-            }
-
-            startRecording() {
-                this.isRecording = true;
-                this.voiceButton.classList.add('recording');
-                this.micIcon.textContent = '⏹️';
-                this.buttonText.textContent = 'Stop Recording';
-                this.showStatus('Listening...');
-                this.startSoundWaves();
-
-                fetch("/start_record", { method: "POST" });
-            }
-
-            stopRecording() {
-                this.isRecording = false;
-                this.voiceButton.classList.remove('recording');
-                this.micIcon.textContent = '🎤';
-                this.buttonText.textContent = 'Tap to Speak';
-                this.stopSoundWaves();
-                this.showStatus('Processing...');
-
-                fetch("/stop_record", { method: "POST" })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === "ok") {
-                            this.userSpeech.textContent = `Bạn nói: "${data.user_text}"`;
-                            this.aiResponse.textContent = `AI: "${data.bot_reply}"`;
-                            this.responseArea.classList.add("show");
-                            this.hideStatus();
-                        } else {
-                            this.showStatus("❌ " + data.message);
-                        }
-                    });
-            }            
-
-            startSoundWaves() {
-                this.waves.forEach((wave, index) => {
-                    setTimeout(() => {
-                        wave.classList.add('active');
-                    }, index * 300);
-                });
-            }
-
-            stopSoundWaves() {
-                this.waves.forEach(wave => {
-                    wave.classList.remove('active');
-                });
-            }
-
-            showStatus(text) {
-                this.statusText.innerHTML = text;
-                this.statusText.classList.add('show');
-            }
-
-            hideStatus() {
-                this.statusText.classList.remove('show');
-            }
-
-            simulateResponse() {
-                // Sample responses for demo
-                const sampleUserInputs = [
-                    "Xin chào, bạn có thể giúp tôi không?",
-                    "Thời tiết hôm nay như thế nào?",
-                    "Hãy kể cho tôi một câu chuyện vui",
-                    "Tôi cần lời khuyên về công việc",
-                    "Bạn có thể giải thích về AI không?"
-                ];
-
-                const sampleAIResponses = [
-                    "Xin chào! Tôi rất vui được giúp đỡ bạn. Bạn cần hỗ trợ gì hôm nay?",
-                    "Hôm nay thời tiết khá đẹp với nhiệt độ khoảng 25°C, trời nắng nhẹ. Rất thích hợp để đi dạo!",
-                    "Có một chú robot đi mua sắm, nhưng nó cứ mua toàn pin! Vì nó nghĩ đó là thức ăn của mình! 😄",
-                    "Hãy luôn theo đuổi đam mê của bạn, học hỏi không ngừng và đừng ngại thử thách bản thân với những cơ hội mới.",
-                    "AI là trí tuệ nhân tạo, giúp máy tính có thể học hỏi và đưa ra quyết định thông minh như con người."
-                ];
-
-                const randomIndex = Math.floor(Math.random() * sampleUserInputs.length);
-                const userInput = sampleUserInputs[randomIndex];
-                const aiResponseText = sampleAIResponses[randomIndex];
-
-                this.hideStatus();
-                
-                // Show user speech
-                this.userSpeech.textContent = `Bạn nói: "${userInput}"`;
-                this.aiResponse.textContent = '';
-                this.responseArea.classList.add('show');
-
-                // Show AI response with typing effect
-                setTimeout(() => {
-                    this.typeResponse(aiResponseText);
-                }, 1000);
-            }
-
-            typeResponse(text) {
-                let index = 0;
-                const typingSpeed = 50;
-                
-                const typeInterval = setInterval(() => {
-                    if (index < text.length) {
-                        this.aiResponse.textContent = `AI: "${text.substring(0, index + 1)}"`;
-                        index++;
-                    } else {
-                        clearInterval(typeInterval);
-                    }
-                }, typingSpeed);
-            }
-        }
-
-        // Initialize the voice assistant
-        document.addEventListener('DOMContentLoaded', () => {
-            new VoiceAssistant();
+    // Voice interaction logic
+    class VoiceAssistant {
+        constructor() {
+            this.isRecording = false;
+            this.voiceButton = document.getElementById('voiceButton');
+            this.micIcon = document.getElementById('micIcon');
+            this.buttonText = document.getElementById('buttonText');
+            this.statusText = document.getElementById('statusText');
+            this.responseArea = document.getElementById('responseArea');
+            this.userSpeech = document.getElementById('userSpeech');
+            this.aiResponse = document.getElementById('aiResponse');
+            this.waves = document.querySelectorAll('.wave');
             
-            // Check login status
-            const username = localStorage.getItem("username");
-            const role = localStorage.getItem("role");
+            this.init();
+        }
 
-            // if (!username) {
-            //     alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
-            //     window.location.href = "/"; // quay về trang login
-            //     return; // dừng các thao tác tiếp theo
-            // }
+        init() {
+            this.voiceButton.addEventListener('click', () => this.toggleRecording());
+            createParticles();
+        }
 
-            // Nếu đã login, hiển thị username và role
-            document.getElementById("usernameDisplay").textContent = username;
-            document.getElementById("roleDisplay").textContent = role;
-        });
+        toggleRecording() {
+            if (!this.isRecording) {
+                this.startRecording();
+            } else {
+                this.stopRecording();
+            }
+        }
 
-        // Xử lý home button
-        document.getElementById("homeBtn").addEventListener("click", () => {
-            window.location.href = "/home";
-        });
+        startRecording() {
+            this.isRecording = true;
+            this.voiceButton.classList.add('recording');
+            this.micIcon.textContent = '⏹️';
+            this.buttonText.textContent = 'Stop Recording';
+            this.showStatus('Listening...');
+            this.startSoundWaves();
 
-        // Xử lý logout
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-            localStorage.removeItem("username");
-            localStorage.setItem("role", data.role);
-            window.location.href = "/";
-        });
-    </script>
+            const id_user = localStorage.getItem("id_user"); // 🔹 lấy id_user
+            fetch("/start_record", { 
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id_user: id_user }) // 🔹 gửi id_user
+            });
+        }
+
+        stopRecording() {
+            this.isRecording = false;
+            this.voiceButton.classList.remove('recording');
+            this.micIcon.textContent = '🎤';
+            this.buttonText.textContent = 'Tap to Speak';
+            this.stopSoundWaves();
+            this.showStatus('Processing...');
+
+            const id_user = localStorage.getItem("id_user"); // 🔹 lấy id_user
+            fetch("/stop_record", { 
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id_user: id_user }) // 🔹 gửi id_user
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    this.userSpeech.textContent = `Bạn nói: "${data.user_text}"`;
+                    this.aiResponse.textContent = `AI: "${data.bot_reply}"`;
+                    this.responseArea.classList.add("show");
+                    this.hideStatus();
+                } else {
+                    this.showStatus("❌ " + data.message);
+                }
+            });
+        }
+
+        startSoundWaves() {
+            this.waves.forEach((wave, index) => {
+                setTimeout(() => {
+                    wave.classList.add('active');
+                }, index * 300);
+            });
+        }
+
+        stopSoundWaves() {
+            this.waves.forEach(wave => {
+                wave.classList.remove('active');
+            });
+        }
+
+        showStatus(text) {
+            this.statusText.innerHTML = text;
+            this.statusText.classList.add('show');
+        }
+
+        hideStatus() {
+            this.statusText.classList.remove('show');
+        }
+    }
+
+    // Initialize the voice assistant
+    document.addEventListener('DOMContentLoaded', () => {
+        new VoiceAssistant();
+        
+        // Check login status
+        const username = localStorage.getItem("username");
+        const role = localStorage.getItem("role");
+        const id_user = localStorage.getItem("id_user"); // 🔹 lấy id_user từ localStorage
+
+        if (!username) {
+            alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
+            window.location.href = "/"; // quay về trang login
+            return;
+        }
+
+        // Nếu đã login, hiển thị username
+        document.getElementById("usernameDisplay").textContent = username;
+    });
+
+    // Xử lý home button
+    document.getElementById("homeBtn").addEventListener("click", () => {
+        window.location.href = "/home";
+    });
+
+    // Xử lý logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "/";
+    });
+</script>
+
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984bc835a46f050b',t:'MTc1ODgxNjUyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

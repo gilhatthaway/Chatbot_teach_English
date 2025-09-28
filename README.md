@@ -292,8 +292,9 @@ sequenceDiagram
 
 1. **Yêu Cầu Hệ Thống**
    - Python 3.x
-   - MySQL Server
+   - MySQL Installer
    - Các gói Python cần thiết (xem requirements.txt)
+   - Truy cập API của Google Gemini và lấy key: https://aistudio.google.com/api-keys
 
 2. **Thiết Lập Môi Trường**
    ```bash
@@ -305,6 +306,12 @@ sequenceDiagram
 
    # Cấu hình cơ sở dữ liệu
    # Chỉnh sửa config_py.py với thông tin đăng nhập MySQL của bạn
+
+   # Cấu hình biến môi trường
+   # Tạo file .env và thêm API vào biên môi trường như sau:
+   GEMINI_API_KEY = "YOUR_API_KEY"
+
+
    ```
 
 3. **Khởi Tạo Cơ Sở Dữ Liệu**
@@ -324,7 +331,7 @@ sequenceDiagram
 
 Hệ thống sử dụng các tệp cấu hình sau:
 - `config_py.py`: Cài đặt cơ sở dữ liệu và hệ thống
-- `prompt.py`: Mẫu hội thoại AI
+- `prompt.py`: Mẫu Rule hội thoại cho từng config AI
 - `save_mysql.py`: Thao tác với cơ sở dữ liệu
 
 ## Các Điểm Cuối API
@@ -360,5 +367,3 @@ Vui lòng đọc hướng dẫn đóng góp của chúng tôi trước khi gửi
 ## Giấy Phép
 
 Dự án này được cấp phép theo Giấy phép MIT - xem tệp LICENSE để biết chi tiết.
-
-Tác giả: github.com/BaoHan1712

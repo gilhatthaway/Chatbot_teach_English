@@ -56,7 +56,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         "english": ["sentence", "english"],
         "translation": ["vietnamese_translation", "translation"]
     }
-    # Tìm examples từ AI response (có thể là 'examples' hoặc 'example_sentences')
+    # Tìm examples từ AI response 
     examples_data = ai_json.get('examples', ai_json.get('example_sentences', []))
     for i, ex in enumerate(examples_data):
         if i >= len(result['example_sentences']):

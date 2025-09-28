@@ -51,11 +51,15 @@ graph TD
    - Hiển thị kết quả và phản hồi từ hệ thống
    - Các trang chính: index, login, chatbot, lesson, voice
 
+   ![Demo](data/login.gif)
+
 2. **Admin Interface (A2)**
    - Giao diện quản trị viên
    - Quản lý users, lessons, và truy vấn database
    - Dashboard theo dõi hoạt động hệ thống
    - Các trang: ad_user, ad_lesson, ad_query
+
+   ![Demo](data/lesson.gif)
 
 3. **Chat Interface (A3)**
    - Giao diện chat với AI
@@ -63,10 +67,14 @@ graph TD
    - Hiển thị lịch sử chat
    - Tích hợp với Chatbot Engine
 
+   ![Demo](data/chat.gif)
+
 4. **Voice Interface (A4)**
    - Ghi âm và phát âm thanh
    - Xử lý tương tác voice
    - Kết nối với Voice Processing Engine
+
+   ![Demo](data/voice.gif)
 
 ##### B. Authentication Layer
 1. **Xử lý Đăng Nhập/Đăng Ký**
@@ -120,9 +128,8 @@ graph TD
        role ENUM('user','admin') DEFAULT 'user',
        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
    );
-
-   -- Sẽ bổ sung thêm các bảng khác cho lessons, chat history, etc.
    ```
+   ![demo_db](data/data.gif)
 
 2. **Tương Tác Database**
    - Connection pooling và quản lý kết nối

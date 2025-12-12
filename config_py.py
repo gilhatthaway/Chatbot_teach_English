@@ -31,7 +31,7 @@ def add_admin_first(username, email, password, role="admin"):
 def startup():
     create_database()
     create_table()
-    add_admin_first("admin12", "admi22n@gmail.com", "admin123")
+    add_admin_first("admin", "admin@gmail.com", "123")
     print("✅ Database và bảng đã được khởi tạo, admin mặc định đã được thêm.")
     # show_all_users()
 

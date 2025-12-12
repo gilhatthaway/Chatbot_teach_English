@@ -269,19 +269,19 @@ def chat():
         print ("❌ Thiếu id_user hoặc message")
         return jsonify({"error": "Thiếu id_user hoặc message"}), 400
 
-    # 📝 Lấy lịch sử hội thoại từ memory
-    conversation_history = conversation_memory.get_context(id_user)
+    # 📝 Lấy context từ memory (recent + semantic)
+    full_context = conversation_memory.get_full_context(id_user, student_input)
     
-    # 📝 Tạo prompt với context lịch sử
+    # 📝 Tạo prompt với context
     chat_prompt = CHATBOT_PROMPT.replace("{student_input}", student_input)
-    chat_prompt = f"{conversation_history}\n\n{chat_prompt}"
+    chat_prompt = f"{full_context}\n\n{chat_prompt}"
     
     response = agent.llm.invoke(chat_prompt)
     print("Raw response:", response)
 
     content = response.content
     cleaned = re.sub(r"```json\s*|\s*```|\*+", "", content).strip()
-    chat_ai = cleaned  # lưu tạm để insert DB
+    chat_ai = cleaned
 
     try:
         parsed = json.loads(cleaned)
@@ -294,12 +294,11 @@ def chat():
         "correction": parsed.get("correction") or ""
     }
 
-    # 📝 Lưu tin nhắn vào memory
-    conversation_memory.add_message(id_user, "user", student_input)
-    conversation_memory.add_message(id_user, "assistant", result.get("response_english"))
+    # 📝 Lưu tin nhắn vào memory (nâng cấp với embedding + FAISS)
+    conversation_memory.add_message(id_user, student_input, result.get("response_english"))
 
     # 👉 Insert vào DB ngay khi chat
-    ok = insert_ai_chat(id_user, student_input, chat_ai, "gemini 1.5")
+    ok = insert_ai_chat(id_user, student_input, chat_ai, "gemini 2.5")
     if not ok:
         return jsonify({"error": "Không lưu được dữ liệu"}), 500
 
@@ -315,8 +314,29 @@ def get_chat_history(id_user):
     return jsonify({
         "status": "success",
         "id_user": id_user,
-        "history": history,
-        "stats": stats
+        "message_count": len(history),
+        "stats": stats,
+        "history": [{"user": h["user"], "ai": h["ai"], "timestamp": h["timestamp"]} for h in history]
+    })
+
+
+# API xem semantic search
+@app.route('/chat/search/<int:id_user>', methods=['POST'])
+def search_chat_context(id_user):
+    """Tìm kiếm ngữ cảnh liên quan bằng semantic search"""
+    data = request.get_json()
+    query = data.get("query", "")
+    top_k = data.get("top_k", 5)
+    
+    if not query:
+        return jsonify({"error": "Thiếu query"}), 400
+    
+    context = conversation_memory.get_semantic_context(id_user, query, top_k)
+    return jsonify({
+        "status": "success",
+        "query": query,
+        "context": context,
+        "top_k": top_k
     })
 
 

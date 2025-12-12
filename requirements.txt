@@ -9,5 +9,10 @@ gTTS
 sounddevice
 scipy
 playsound
-mysql-connector-python
 pygame
+
+# Memory & Semantic Search
+faiss-cpu
+sentence-transformers
+numpy
+tf-keras

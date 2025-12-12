@@ -6,6 +6,7 @@ from flask_cors import CORS
 import os
 import json
 from struc_lesson import *
+from memory import conversation_memory
 import re
 from save_mysql import *
 import speech_recognition as sr
@@ -268,7 +269,13 @@ def chat():
         print ("❌ Thiếu id_user hoặc message")
         return jsonify({"error": "Thiếu id_user hoặc message"}), 400
 
+    # 📝 Lấy lịch sử hội thoại từ memory
+    conversation_history = conversation_memory.get_context(id_user)
+    
+    # 📝 Tạo prompt với context lịch sử
     chat_prompt = CHATBOT_PROMPT.replace("{student_input}", student_input)
+    chat_prompt = f"{conversation_history}\n\n{chat_prompt}"
+    
     response = agent.llm.invoke(chat_prompt)
     print("Raw response:", response)
 
@@ -287,12 +294,41 @@ def chat():
         "correction": parsed.get("correction") or ""
     }
 
+    # 📝 Lưu tin nhắn vào memory
+    conversation_memory.add_message(id_user, "user", student_input)
+    conversation_memory.add_message(id_user, "assistant", result.get("response_english"))
+
     # 👉 Insert vào DB ngay khi chat
     ok = insert_ai_chat(id_user, student_input, chat_ai, "gemini 1.5")
     if not ok:
         return jsonify({"error": "Không lưu được dữ liệu"}), 500
 
     return jsonify(result)
+
+
+# API xem lịch sử hội thoại
+@app.route('/chat/history/<int:id_user>', methods=['GET'])
+def get_chat_history(id_user):
+    """Lấy lịch sử hội thoại của user"""
+    history = conversation_memory.get_history(id_user)
+    stats = conversation_memory.get_stats(id_user)
+    return jsonify({
+        "status": "success",
+        "id_user": id_user,
+        "history": history,
+        "stats": stats
+    })
+
+
+# API xóa lịch sử hội thoại
+@app.route('/chat/clear/<int:id_user>', methods=['POST'])
+def clear_chat_history(id_user):
+    """Xóa lịch sử hội thoại của user"""
+    conversation_memory.clear_history(id_user)
+    return jsonify({
+        "status": "success",
+        "message": f"Đã xóa lịch sử hội thoại của user {id_user}"
+    })
 
 
 #/////////////////////////// CHẠY ĐĂNG NHẬP mysql /////////////////////////

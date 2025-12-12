@@ -1,4 +1,44 @@
 from copy import deepcopy
+import re
+
+def clean_markdown_text(text):
+    """
+    Xóa dấu markdown (**, *, __, _, #, ##, ###, ~~, `) khỏi text.
+    
+    Args:
+        text: Chuỗi cần xử lý
+    
+    Returns:
+        Chuỗi đã làm sạch
+    
+    Ví dụ:
+        "**burger**" -> "burger"
+        "This is **bold** text" -> "This is bold text"
+        "~~strikethrough~~" -> "strikethrough"
+    """
+    if not isinstance(text, str):
+        return str(text)
+    
+    # Xóa bold (**text**)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    
+    # Xóa italic (*text* hoặc _text_)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    text = re.sub(r'_(.*?)_', r'\1', text)
+    
+    # Xóa bold với __ (__text__)
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    
+    # Xóa strikethrough (~~text~~)
+    text = re.sub(r'~~(.*?)~~', r'\1', text)
+    
+    # Xóa inline code (`text`)
+    text = re.sub(r'`(.*?)`', r'\1', text)
+    
+    # Xóa heading markers (# ## ### etc)
+    text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
+    
+    return text.strip()
 
 LESSON_TEMPLATE = {
     "topic": "",
@@ -49,7 +89,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         ai_json = {}
     
     result = deepcopy(LESSON_TEMPLATE)
-    result['topic'] = ai_json.get('topic', topic)
+    result['topic'] = clean_markdown_text(ai_json.get('topic', topic))
 
     # --- Vocabulary ---
     vocab_mapping = {
@@ -76,7 +116,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         for k, keys in vocab_mapping.items():
             for key in keys:
                 if key in vocab:
-                    new_vocab[k] = vocab[key]
+                    new_vocab[k] = clean_markdown_text(vocab[key])
                     break
             else:
                 new_vocab[k] = ""
@@ -104,7 +144,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         for k, keys in ex_mapping.items():
             for key in keys:
                 if key in ex:
-                    new_ex[k] = ex[key]
+                    new_ex[k] = clean_markdown_text(ex[key])
                     break
             else:
                 new_ex[k] = ""
@@ -131,8 +171,8 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         
         # Xử lý trường hợp dialogue chứa cả A và B trong một string
         if 'dialogue' in msg and isinstance(msg['dialogue'], str):
-            dialogue_text = msg['dialogue']
-            translation = msg.get('vietnamese_translation', '')
+            dialogue_text = clean_markdown_text(msg['dialogue'])
+            translation = clean_markdown_text(msg.get('vietnamese_translation', ''))
             
             # Parse format "A: Do you like apples? B: Yes, I love apples!"
             if "A:" in dialogue_text and "B:" in dialogue_text:
@@ -161,7 +201,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         for k, keys in conv_mapping.items():
             for key in keys:
                 if key in msg:
-                    new_msg[k] = msg[key]
+                    new_msg[k] = clean_markdown_text(msg[key])
                     break
             else:
                 new_msg[k] = ""
@@ -196,62 +236,66 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
                 
                 if exercise_type == 'fill_in_blank':
                     normalized_items.append({
-                        "sentence": item.get('sentence', ''),
-                        "options": item.get('options', []),
-                        "answer": item.get('answer', '')
+                        "sentence": clean_markdown_text(item.get('sentence', '')),
+                        "options": [clean_markdown_text(opt) for opt in item.get('options', [])],
+                        "answer": clean_markdown_text(item.get('answer', ''))
                     })
                 elif exercise_type == 'sentence_order':
                     # Xử lý cả scrambled_words và scrambled
                     scrambled = item.get('scrambled_words') or item.get('scrambled', [])
+                    cleaned_scrambled = [clean_markdown_text(w) for w in scrambled]
                     normalized_items.append({
-                        "scrambled_words": scrambled,
-                        "answer": item.get('answer', '')
+                        "scrambled_words": cleaned_scrambled,
+                        "answer": clean_markdown_text(item.get('answer', ''))
                     })
                 elif exercise_type == 'make_sentence':
                     # Xử lý cả prompt_words/words và example_answer/suggested_answer
                     words = item.get('prompt_words') or item.get('words', [])
+                    cleaned_words = [clean_markdown_text(w) for w in words]
                     answer = item.get('example_answer') or item.get('suggested_answer', '')
                     normalized_items.append({
-                        "prompt_words": words,
-                        "example_answer": answer
+                        "prompt_words": cleaned_words,
+                        "example_answer": clean_markdown_text(answer)
                     })
             
             if normalized_items:
                 processed_exercises.append({
                     "type": exercise_type,
-                    "question": exercise.get('question', ''),
+                    "question": clean_markdown_text(exercise.get('question', '')),
                     "items": normalized_items
                 })
         # Nếu exercise có cấu trúc cũ, convert sang cấu trúc mới
         elif exercise_type == 'fill_in_blank' and 'options' in exercise:
             processed_exercises.append({
                 "type": exercise_type,
-                "question": exercise.get('question', 'Chọn từ đúng để điền vào chỗ trống.'),
+                "question": clean_markdown_text(exercise.get('question', 'Chọn từ đúng để điền vào chỗ trống.')),
                 "items": [{
-                    "sentence": exercise.get('question', ''),
-                    "options": exercise.get('options', []),
-                    "answer": exercise.get('answer', '')
+                    "sentence": clean_markdown_text(exercise.get('question', '')),
+                    "options": [clean_markdown_text(opt) for opt in exercise.get('options', [])],
+                    "answer": clean_markdown_text(exercise.get('answer', ''))
                 }]
             })
         elif exercise_type == 'sentence_order' and ('scrambled' in exercise or 'scrambled_words' in exercise):
             scrambled = exercise.get('scrambled_words') or exercise.get('scrambled', [])
+            cleaned_scrambled = [clean_markdown_text(w) for w in scrambled]
             processed_exercises.append({
                 "type": exercise_type,
-                "question": exercise.get('question', 'Sắp xếp các từ sau thành câu hoàn chỉnh.'),
+                "question": clean_markdown_text(exercise.get('question', 'Sắp xếp các từ sau thành câu hoàn chỉnh.')),
                 "items": [{
-                    "scrambled_words": scrambled,
-                    "answer": exercise.get('answer', '')
+                    "scrambled_words": cleaned_scrambled,
+                    "answer": clean_markdown_text(exercise.get('answer', ''))
                 }]
             })
         elif exercise_type == 'make_sentence':
             words = exercise.get('prompt_words') or exercise.get('words', [exercise.get('word', '')])
+            cleaned_words = [clean_markdown_text(w) for w in words]
             answer = exercise.get('example_answer') or exercise.get('suggested_answer', '')
             processed_exercises.append({
                 "type": exercise_type,
-                "question": exercise.get('question', 'Tạo một câu hoàn chỉnh sử dụng các từ cho sẵn.'),
+                "question": clean_markdown_text(exercise.get('question', 'Tạo một câu hoàn chỉnh sử dụng các từ cho sẵn.')),
                 "items": [{
-                    "prompt_words": words,
-                    "example_answer": answer
+                    "prompt_words": cleaned_words,
+                    "example_answer": clean_markdown_text(answer)
                 }]
             })
     
@@ -271,15 +315,15 @@ def create_sample_exercises(vocabulary):
     fill_in_blank_items = []
     for i, vocab in enumerate(vocabulary[:5]):
         if vocab.get('word') and vocab.get('example'):
-            word = vocab['word']
-            example = vocab['example']
+            word = clean_markdown_text(vocab['word'])
+            example = clean_markdown_text(vocab['example'])
             
             # Tạo câu hỏi điền từ
             if word.lower() in example.lower():
                 question = example.replace(word, '_____').replace(word.capitalize(), '_____')
                 # Tạo options (4 lựa chọn)
                 options = [word]
-                other_words = [v.get('word', '') for v in vocabulary if v != vocab and v.get('word')]
+                other_words = [clean_markdown_text(v.get('word', '')) for v in vocabulary if v != vocab and v.get('word')]
                 options.extend(other_words[:3])
                 
                 if len(options) > 0 and word:
@@ -309,7 +353,7 @@ def create_sample_exercises(vocabulary):
     sentence_order_items = []
     for i, vocab in enumerate(vocabulary[:4]):
         if vocab.get('example'):
-            example = vocab['example']
+            example = clean_markdown_text(vocab['example'])
             words = example.split()
             if len(words) > 3:
                 sentence_order_items.append({
@@ -338,8 +382,8 @@ def create_sample_exercises(vocabulary):
     for i, vocab in enumerate(vocabulary[:3]):
         if vocab.get('word') and vocab.get('example'):
             make_sentence_items.append({
-                "prompt_words": [vocab['word']],
-                "example_answer": vocab['example']
+                "prompt_words": [clean_markdown_text(vocab['word'])],
+                "example_answer": clean_markdown_text(vocab['example'])
             })
     
     if make_sentence_items:

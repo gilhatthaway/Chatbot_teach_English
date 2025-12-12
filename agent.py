@@ -22,7 +22,7 @@ CORS(app)
 
 
 class EnglishTeachingAgent:
-    def __init__(self, api_key: str, model: str = "gemini-2.0-flash"):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         self.llm = ChatGoogleGenerativeAI(
             api_key=api_key,
             model=model,
@@ -37,9 +37,15 @@ class EnglishTeachingAgent:
         response = self.llm.invoke(full_prompt)
 
         try:
-            result_json = json.loads(response.content)
-        except json.JSONDecodeError:
+            # Kiểm tra xem response.content có phải string không
+            content = response.content if isinstance(response.content, str) else str(response.content)
+            result_json = json.loads(content)
+        except json.JSONDecodeError as e:
+            print(f"⚠️ Không thể parse JSON: {e}")
             result_json = {"content": response.content}
+        except Exception as e:
+            print(f"⚠️ Unexpected error in generate: {e}")
+            result_json = {"content": str(response.content)}
 
         return result_json
 
@@ -93,27 +99,49 @@ def ad_query():
 @app.route('/generate/lesson/<topic>', methods=["POST"])
 def generate_content(topic):
     try:
+        print(f"\n{'='*60}")
+        print(f"📌 API: /generate/lesson/{topic}")
+        print(f"{'='*60}")
+        
         # Lấy dữ liệu từ request JSON
         data = request.get_json()
         id_user = data.get("id_user")
 
         if not id_user:
             return jsonify({"error": "Thiếu id_user"}), 400
+        
+        # Đảm bảo topic là string
+        if not isinstance(topic, str):
+            print(f"⚠️ topic không phải string: {type(topic)}")
+            topic = str(topic)
 
         # Bước 1: Tạo bài học ban đầu từ AI
         print(f"🚀 Bước 1: Tạo bài học ban đầu cho user {id_user}, chủ đề '{topic}'")
         lesson_data = agent.generate("lesson", topic=topic)
+        
+        # Đảm bảo lesson_data là dict
+        if not isinstance(lesson_data, dict):
+            print(f"⚠️ lesson_data không phải dict: {type(lesson_data)}")
+            lesson_data = {"content": str(lesson_data)}
+        
         content = lesson_data.get('content', '{}')
         print("🔥 AI raw content:", content)
 
         # --- parse JSON từ AI ---
+        ai_json = None
         try:
+            # Kiểm tra nếu content là string
+            if not isinstance(content, str):
+                print(f"⚠️ Content không phải string: {type(content)}")
+                content = str(content)
+            
             if "```json" in content:
                 start = content.find("```json") + 7
                 end = content.find("```", start)
                 if end != -1:
                     json_str = content[start:end].strip()
                     ai_json = json.loads(json_str)
+                    print(f"✅ Parsed JSON from ```json block")
                 else:
                     ai_json = {"topic": topic}
             elif "```" in content:
@@ -122,18 +150,41 @@ def generate_content(topic):
                 if end != -1:
                     json_str = content[start:end].strip()
                     ai_json = json.loads(json_str)
+                    print(f"✅ Parsed JSON from ``` block")
                 else:
                     ai_json = {"topic": topic}
             else:
                 ai_json = json.loads(content)
+                print(f"✅ Parsed JSON directly")
         except json.JSONDecodeError as e:
             print(f"❌ JSON Parse Error: {e}")
             print(f"Raw content: {content}")
             ai_json = {"topic": topic}
+        except Exception as e:
+            print(f"❌ Unexpected error parsing JSON: {e}")
+            ai_json = {"topic": topic}
+        
+        # Đảm bảo ai_json là dictionary
+        if not isinstance(ai_json, dict):
+            print(f"⚠️ ai_json không phải dict: {type(ai_json)}")
+            ai_json = {"topic": topic}
 
         # Bước 2: Chuẩn hóa cấu trúc và tạo exercises mẫu
         print("🔧 Bước 2: Chuẩn hóa cấu trúc và tạo exercises")
-        standardized_lesson = standardize_lesson(ai_json, topic)
+        try:
+            standardized_lesson = standardize_lesson(ai_json, topic)
+        except Exception as e:
+            print(f"❌ Lỗi khi chuẩn hóa bài học: {e}")
+            import traceback
+            traceback.print_exc()
+            standardized_lesson = {"topic": topic, "vocabulary": [], "example_sentences": [], "conversation": [], "exercises": []}
+        
+        # Đảm bảo exercises luôn là array
+        if not standardized_lesson.get('exercises'):
+            standardized_lesson['exercises'] = []
+        if not isinstance(standardized_lesson['exercises'], list):
+            standardized_lesson['exercises'] = []
+            
         print("✅ Standardized lesson JSON:", json.dumps(standardized_lesson, ensure_ascii=False, indent=2))
 
         # Bước 3: Đưa bài học đã chuẩn hóa qua AI lần 2 để tối ưu hóa
@@ -141,41 +192,66 @@ def generate_content(topic):
         lesson_json_str = json.dumps(standardized_lesson, ensure_ascii=False, indent=2)
 
         final_lesson_data = agent.generate("finalize_lesson", lesson_data=lesson_json_str)
+        
+        # Đảm bảo final_lesson_data là dict
+        if not isinstance(final_lesson_data, dict):
+            print(f"⚠️ final_lesson_data không phải dict: {type(final_lesson_data)}")
+            final_lesson_data = {"content": str(final_lesson_data)}
+        
         final_content = final_lesson_data.get('content', '{}')
         print("🌟 AI final content:", final_content)
 
+        final_result = None
         try:
-            if "```json" in final_content:
+            if not isinstance(final_content, str):
+                print(f"⚠️ final_content không phải string: {type(final_content)}")
+                final_result = standardized_lesson
+            elif "```json" in final_content:
                 start = final_content.find("```json") + 7
                 end = final_content.find("```", start)
                 if end != -1:
                     json_str = final_content[start:end].strip()
                     final_result = json.loads(json_str)
+                    print("✅ Parsed final result from ```json block")
                 else:
-                    raise json.JSONDecodeError("No closing ``` found", final_content, 0)
+                    print("⚠️ No closing ``` found, using standardized lesson")
+                    final_result = standardized_lesson
             elif "```" in final_content:
                 start = final_content.find("```") + 3
                 end = final_content.find("```", start)
                 if end != -1:
                     json_str = final_content[start:end].strip()
                     final_result = json.loads(json_str)
+                    print("✅ Parsed final result from ``` block")
                 else:
-                    raise json.JSONDecodeError("No closing ``` found", final_content, 0)
+                    print("⚠️ No closing ``` found, using standardized lesson")
+                    final_result = standardized_lesson
             else:
                 final_result = json.loads(final_content)
-
-            print("🎉 Final lesson JSON:", json.dumps(final_result, ensure_ascii=False, indent=2))
-
-            # 🔹 chỗ này bạn có thể gọi insert_ai_lesson(id_user, json.dumps(final_result, ensure_ascii=False)) để lưu DB
-            insert_ai_lesson(id_user, topic,final_content, "gemini 2.5")
-
-            return jsonify(final_result)
+                print("✅ Parsed final result directly")
         except json.JSONDecodeError as e:
-            print(f"⚠️ AI không trả về JSON hợp lệ: {e}")
-            return jsonify(standardized_lesson)
+            print(f"⚠️ Failed to parse final content: {e}, using standardized lesson")
+            final_result = standardized_lesson
+        except Exception as e:
+            print(f"⚠️ Unexpected error processing final result: {e}, using standardized lesson")
+            final_result = standardized_lesson
+
+        # Fallback: nếu final_result không phải dict, sử dụng standardized_lesson
+        if not isinstance(final_result, dict):
+            print(f"⚠️ final_result không phải dict: {type(final_result)}, using standardized lesson")
+            final_result = standardized_lesson
+
+        print("🎉 Final lesson JSON:", json.dumps(final_result, ensure_ascii=False, indent=2))
+
+        # 🔹 chỗ này bạn có thể gọi insert_ai_lesson(id_user, json.dumps(final_result, ensure_ascii=False)) để lưu DB
+        insert_ai_lesson(id_user, topic, json.dumps(final_result, ensure_ascii=False), "gemini 2.5")
+
+        return jsonify(final_result)
 
     except Exception as e:
         print(f"❌ Error generating content: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
         

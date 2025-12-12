@@ -9,3 +9,5 @@ gTTS
 sounddevice
 scipy
 playsound
+mysql-connector-python
+pygame

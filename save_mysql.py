@@ -5,7 +5,7 @@ from mysql.connector import Error
 DB_HOST = "127.0.0.1"
 DB_PORT = 3306
 DB_USER = "root"
-DB_PASS = "hoang123@"
+DB_PASS = "bao123"
 DB_NAME = "aichat"
 
 #////////////// ////////////////////////////////////////////////Tạo database và bảng nếu chưa có//////////////////////////////
@@ -439,12 +439,13 @@ def get_all_tables_data():
             connection.close()
 
 
-# # Test
+# Test
 # if __name__ == "__main__":
 #     create_database()   # 🔹 tạo DB nếu chưa có
-#     # create_table()      # 🔹 tạo bảng nếu chưa có
+#     create_table()      # 🔹 tạo bảng nếu chưa có
 #     # insert_new_user("bao", "bao123@gmail.com", "123")
-#     # login_user("hoang123@gmail.com", "123456")
+#     admin_insert_user("bao", "bao123@gmail.com", "123", "admin")
+#     login_user("hoang123@gmail.com", "123456")
 #     create_table_ai_voice() # tạo bảng AI_voice
 #     create_table_ai_chat()  # tạo bảng AI_chat
 #     create_lessons_table() # Tạo bảng lessons

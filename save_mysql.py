@@ -358,7 +358,36 @@ def create_table_xac_thuc_email():
         if connection and connection.is_connected():
             cursor.close()
             connection.close()
-# Hàm tạo bảng oyp_quen_mat_khau
+
+# Hàm tạo bảng otp_quen_mat_khau
+def create_table_otp_quen_mat_khau():
+    """Tạo bảng otp_quen_mat_khau nếu chưa có."""
+    try:
+        connection = connect_to_mysql()
+        if connection is None:
+            return False
+
+        cursor = connection.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS otp_quen_mat_khau (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(100) NOT NULL UNIQUE,
+                otp VARCHAR(6) NOT NULL,
+                ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """)
+        print("✅ Bảng `otp_quen_mat_khau` đã sẵn sàng!")
+        return True
+
+    except Error as e:
+        print("❌ Lỗi khi tạo bảng otp_quen_mat_khau:", e)
+        return False
+    
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
 
 # Hàm lưu OTP vào bảng otp_quen_mat_khau (Quên mk)
 def save_otp(email, otp):

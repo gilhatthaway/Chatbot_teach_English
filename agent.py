@@ -16,6 +16,7 @@ import pygame
 from config_py import startup
 from send_mail import send_otp
 import random
+from memory import conversation_memory
 load_dotenv()
 
 app = Flask(__name__)
@@ -48,7 +49,7 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 agent = EnglishTeachingAgent(api_key=API_KEY)
 
 # Trang đăng nhập
-@app.route('/login')
+@app.route('/')
 def index():
     return render_template("login.html")
 
@@ -130,24 +131,28 @@ def chat():
     if not id_nguoi_dung or not student_input:
         return jsonify({"error": "Thiếu id_nguoi_dung hoặc message"}), 400
 
-    # ✅ Lưu câu user trước
+    # ✅ Lưu câu user vào database
     save_message(id_nguoi_dung, "user", student_input)
 
-    # ✅ Lấy lịch sử chat gần nhất
-    history = get_lich_su_chat(id_nguoi_dung, limit=5)
-    context = ""
-    for role, msg in history:
-        if role == "user":
-            context += f"Người học: {msg}\n"
-        else:
-            context += f"AI: {msg}\n"
+    # ✅ Lấy ngữ cảnh thông minh từ Memory (recent + semantic)
+    try:
+        full_context = conversation_memory.get_full_context(id_nguoi_dung, student_input)
+    except Exception as e:
+        print(f"⚠️ Lỗi lấy context từ memory: {e}")
+        # Fallback: lấy từ database
+        history = get_lich_su_chat(id_nguoi_dung, limit=5)
+        full_context = ""
+        for role, msg in history:
+            if role == "user":
+                full_context += f"Người học: {msg}\n"
+            else:
+                full_context += f"AI: {msg}\n"
 
-    # ✅ Tạo prompt gửi AI
+    # ✅ Tạo prompt gửi AI với ngữ cảnh đầy đủ
     chat_prompt = f"""
 {CHATBOT_PROMPT}
 
-Dưới đây là lịch sử hội thoại gần đây:
-{context}
+{full_context}
 
 Người học nói: {student_input}
 """
@@ -184,6 +189,13 @@ Người học nói: {student_input}
 
     # ✅ Lưu vào bảng AI_chat
     insert_ai_chat(id_nguoi_dung, student_input, noi_dung_ai, "gemini 1.5")
+
+    # ✅ Lưu vào Memory để sử dụng ngữ cảnh thông minh lần sau
+    try:
+        conversation_memory.add_message(id_nguoi_dung, student_input, noi_dung_ai)
+        print(f"✅ Lưu tin nhắn vào Memory cho user {id_nguoi_dung}")
+    except Exception as e:
+        print(f"⚠️ Lỗi lưu vào Memory: {e}")
 
     return jsonify(result)
 
@@ -772,13 +784,30 @@ def stop_record():
     except sr.RequestError as e:
         return jsonify({"status": "error", "message": f"Lỗi Google SR: {e}"}), 500
 
+    # ✅ Lấy ngữ cảnh từ Memory
+    try:
+        voice_context = conversation_memory.get_full_context(id_nguoi_dung, user_text)
+    except Exception as e:
+        print(f"⚠️ Lỗi lấy context từ memory: {e}")
+        voice_context = ""
+
     voice_prompt = VOICE_PROMPT.replace("{student_input}", user_text)
+    if voice_context:
+        voice_prompt = f"{voice_context}\n\n{voice_prompt}"
+    
     response = agent.llm.invoke(voice_prompt)
     bot_reply = response.content
     print("🤖 Bot:", bot_reply)
 
-    # 🔹 Lưu hội thoại vào DB kèm id_nguoi_dung
+    # ✅ Lưu hội thoại vào DB kèm id_nguoi_dung
     insert_ai_voice(id_nguoi_dung, user_text, bot_reply, "gemini 1.5")
+
+    # ✅ Lưu vào Memory để sử dụng ngữ cảnh lần sau
+    try:
+        conversation_memory.add_message(id_nguoi_dung, user_text, bot_reply)
+        print(f"✅ Lưu tin nhắn voice vào Memory cho user {id_nguoi_dung}")
+    except Exception as e:
+        print(f"⚠️ Lỗi lưu vào Memory: {e}")
 
     speak(bot_reply)
 
@@ -1046,6 +1075,56 @@ def count_lessons_all_api():
         r["id_nguoi_dung"] = int(r.get("id_nguoi_dung") or 0)
 
     return jsonify(data)
+
+#///////////////////////////////////////////////////////////////////////////////
+# ✅ API QUẢN LÝ MEMORY (Ngữ cảnh & Lịch sử)
+#///////////////////////////////////////////////////////////////////////////////
+
+@app.get("/memory/stats/<int:id_nguoi_dung>")
+def api_memory_stats(id_nguoi_dung):
+    """Lấy thống kê memory của user"""
+    try:
+        stats = conversation_memory.get_stats(id_nguoi_dung)
+        return jsonify({
+            "status": "success",
+            "data": stats
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.get("/memory/history/<int:id_nguoi_dung>")
+def api_memory_history(id_nguoi_dung):
+    """Lấy toàn bộ lịch sử từ memory"""
+    try:
+        history = conversation_memory.get_history(id_nguoi_dung)
+        # Lọc bỏ embedding để giảm dung lượng response
+        clean_history = [
+            {
+                "user": msg["user"],
+                "ai": msg["ai"],
+                "timestamp": msg["timestamp"]
+            }
+            for msg in history
+        ]
+        return jsonify({
+            "status": "success",
+            "data": clean_history
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.delete("/memory/clear/<int:id_nguoi_dung>")
+def api_memory_clear(id_nguoi_dung):
+    """Xóa toàn bộ memory của user"""
+    try:
+        conversation_memory.clear_history(id_nguoi_dung)
+        return jsonify({
+            "status": "success",
+            "message": f"Đã xóa memory cho user {id_nguoi_dung}"
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 #///////////////////////////////////////////////////////////////////////////////
 if __name__ == "__main__":
     startup()

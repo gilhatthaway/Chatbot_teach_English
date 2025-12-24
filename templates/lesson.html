@@ -7,68 +7,45 @@
     <title>Bài Tập Tiếng Anh - Family</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .tab-active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .pronunciation {
-            color: #e53e3e;
-            font-style: italic;
-        }
-        
-        .exercise-option:hover {
-            transform: translateY(-2px);
-        }
-        
-        .order-word {
-            transition: all 0.2s ease;
-        }
-        
-        .order-word:hover {
-            transform: scale(1.05);
-            .user-info {
-                position: fixed;
-                top: 1rem;
-                right: 1rem;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                z-index: 50;
-            }
-            .logout-btn {
-                background-color: #ef4444;
-                color: white;
-                padding: 0.5rem 1rem;
-                border-radius: 0.5rem;
-                font-size: 0.975rem;
-                font-weight: 500;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-                transition: all 0.2s;
-            }
-            .logout-btn:hover {
-                background-color: #dc2626;
-            }
-            .username-display {
-                font-weight: 600;
-                color: white;
-                font-size: 0.975rem;
-            }
+        .fade-in { animation: fadeIn 0.45s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .pronunciation { color: #e53e3e; font-style: italic; }
+        .exercise-option:hover { transform: translateY(-2px); }
+        .order-word { transition: all 0.2s ease; }
+        .order-word:hover { transform: scale(1.05); }
+
+        /* Modern chat layout styles (Messenger / Zalo-like) */
+        #conversationList { padding: 18px; background: linear-gradient(180deg,#f8fafc 0,#ffffff 100%); min-height: 420px; overflow: hidden; }
+        .chat-scroller { display: flex; flex-direction: column; gap: 12px; max-height: 700px; overflow-y: auto; padding-bottom: 12px; }
+
+        .message-row { display: flex; align-items: flex-end; gap: 12px; width: 100%; }
+        .message-row.left { justify-content: flex-start; }
+        .message-row.right { justify-content: flex-end; }
+
+        .avatar { width: 44px; height: 44px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; box-shadow: 0 4px 14px rgba(2,6,23,0.08); flex-shrink: 0; }
+        .avatar.bot { background: #2563eb; }
+        .avatar.user { background: #6b7280; }
+
+        .bubble { max-width: 72%; padding: 12px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; box-shadow: 0 8px 24px rgba(2,6,23,0.06); position: relative; word-break: break-word; }
+        .bubble.left { background: #ffffff; color: #0f172a; border: 1px solid rgba(15,23,42,0.06); border-top-left-radius: 6px; }
+        .bubble.right { background: #0078ff; color: #fff; border: 1px solid rgba(0,0,0,0.04); border-top-right-radius: 6px; }
+
+        /* subtle tail */
+        .bubble.left::after, .bubble.right::after { content: ''; position: absolute; bottom: -6px; width: 12px; height: 12px; transform: rotate(45deg); }
+        .bubble.left::after { left: 18px; background: #ffffff; border-left: 1px solid rgba(15,23,42,0.06); border-bottom: 1px solid rgba(15,23,42,0.06); }
+        .bubble.right::after { right: 18px; background: #0078ff; }
+
+        .bubble .text { margin-bottom: 6px; font-weight: 500; }
+        .bubble .translation { font-size: 13px; color: rgba(15,23,42,0.6); }
+
+        .msg-meta { margin-top: 6px; display: flex; gap: 8px; align-items: center; font-size: 12px; color: rgba(15,23,42,0.5); }
+        .msg-meta .speaker { font-weight: 600; color: rgba(15,23,42,0.75); }
+
+        /* small responsive adjustments */
+        @media (max-width: 768px) {
+            .bubble { max-width: 86%; font-size: 15px; padding: 10px 12px; }
+            .avatar { width: 36px; height: 36px; }
         }
     </style>
 </head>
@@ -198,21 +175,33 @@
             </div>
 
             <!-- Conversation Tab -->
-            <div id="conversation-content" class="tab-content hidden">
-                <div class="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl shadow-lg p-6">
-                    <h3 class="text-xl font-semibold mb-6 text-gray-800 text-center">🗣️ Hội Thoại Mẫu</h3>
-                    <div class="max-w-4xl mx-auto">
-                        <div class="bg-white rounded-2xl shadow-inner p-6 min-h-96 max-h-[500px] overflow-y-auto" id="conversationList">
-                            <!-- Conversation will be inserted here -->
-                        </div>
+                <div id="conversation-content" class="tab-content hidden">
+            <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                <!-- Header của khung chat -->
+                <div class="bg-blue-600 p-4 text-white text-center">
+                    <h3 class="text-xl font-bold">🗣️ Hội Thoại Thực Tế</h3>
+                    <p class="text-blue-100 text-sm">Nhấn vào biểu tượng loa để nghe phát âm</p>
+                </div>
+                
+                <!-- Danh sách chat - Tăng chiều rộng ở đây -->
+                <div class="max-w-4xl mx-auto w-full"> 
+                    <div class="bg-gray-50 min-h-[500px] max-h-[700px] overflow-y-auto" id="conversationList">
+                        <!-- Nội dung chat sẽ được JS đổ vào đây -->
                     </div>
                 </div>
             </div>
+        </div>
 
             <!-- Exercises Tab -->
             <div id="exercises-content" class="tab-content hidden">
-                <div class="space-y-6" id="exercisesList">
-                    <!-- Exercises will be generated here -->
+                <div class="bg-gradient-to-br from-purple-50 via-white to-pink-50 rounded-2xl shadow-xl p-8">
+                    <div class="max-w-2xl mx-auto">
+                        <h3 class="text-2xl font-bold mb-2 text-gray-800 text-center">✏️ Bài Tập Luyện Tập</h3>
+                        <p class="text-center text-gray-600 mb-6">Luyện tập để cải thiện kỹ năng tiếng Anh của bạn</p>
+                        <div class="space-y-6" id="exercisesList">
+                            <!-- Exercises will be generated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -522,65 +511,65 @@
             });
         }
 
-        function displayConversation() {
-            const container = document.getElementById('conversationList');
-            container.innerHTML = '';
+    function displayConversation() {
+    const container = document.getElementById('conversationList');
+    container.innerHTML = '';
 
-            if (!lessonData || !lessonData.conversation || !Array.isArray(lessonData.conversation)) {
-                container.innerHTML = '<p class="text-gray-600 text-center">Không có hội thoại nào.</p>';
-                return;
-            }
+    if (!lessonData || !lessonData.conversation || !Array.isArray(lessonData.conversation) || lessonData.conversation.length === 0) {
+        container.innerHTML = '<p class="text-gray-600 text-center py-20">Không có dữ liệu hội thoại.</p>';
+        return;
+    }
 
-            lessonData.conversation.forEach((item, index) => {
-                const message = document.createElement('div');
-                const isA = item.speaker === 'A' || item.speaker === 'Person A';
-                const speakerName = item.speaker === 'Person A' ? 'Người A' : item.speaker === 'Person B' ? 'Người B' : `Người ${item.speaker}`;
-                
-                message.className = `flex ${isA ? 'justify-start' : 'justify-end'} mb-4 fade-in`;
-                message.style.animationDelay = `${index * 0.2}s`;
-                
-                message.innerHTML = `
-                    <div class="flex ${isA ? 'flex-row' : 'flex-row-reverse'} items-start space-x-3 max-w-2xl">
-                        <!-- Avatar -->
-                        <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${isA ? 'bg-gray-200' : 'bg-blue-500'}">
-                            <span class="text-lg">${isA ? '👤' : '🤖'}</span>
-                        </div>
-                        
-                        <!-- Message Content -->
-                        <div class="flex flex-col ${isA ? 'items-start' : 'items-end'}">
-                            <!-- Speaker Name -->
-                            <div class="text-xs text-gray-500 mb-1 px-2">
-                                ${speakerName}
-                            </div>
-                            
-                            <!-- Message Bubble -->
-                            <div class="relative px-4 py-3 rounded-2xl ${isA ? 'bg-white border border-gray-200 text-gray-800' : 'bg-blue-600 text-white'} shadow-sm">
-                                <!-- Message Text -->
-                                <p class="mb-2 leading-relaxed">${item.text}</p>
-                                
-                                <!-- Translation -->
-                                <div class="border-t ${isA ? 'border-gray-100' : 'border-blue-400'} pt-2 mt-2">
-                                    <p class="text-xs ${isA ? 'text-gray-500' : 'text-blue-100'} italic">${item.translation}</p>
-                                </div>
-                                
-                                <!-- Speech Button -->
-                                <button onclick="speakSentence('${item.text.replace(/'/g, "\\'")}')" 
-                                        class="absolute ${isA ? '-right-2 -bottom-2' : '-left-2 -bottom-2'} w-8 h-8 rounded-full ${isA ? 'bg-gray-100 hover:bg-gray-200 text-gray-600' : 'bg-blue-500 hover:bg-blue-400 text-white'} flex items-center justify-center text-xs transition-colors shadow-md">
-                                    🔊
-                                </button>
-                            </div>
-                            
-                            <!-- Message Time (optional) -->
-                            <div class="text-xs text-gray-400 mt-1 px-2">
-                                ${String(index + 1).padStart(2, '0')}:00
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(message);
-            });
+    const scroller = document.createElement('div');
+    scroller.className = 'chat-scroller';
+
+    // Build speakers list to alternate sides (first speaker = left)
+    const speakers = [];
+    lessonData.conversation.forEach(item => { if (item && item.speaker && !speakers.includes(item.speaker)) speakers.push(item.speaker); });
+
+    lessonData.conversation.forEach((item, index) => {
+        const englishText = (item.english_line || item.text || '').toString();
+        const vietnameseText = (item.vietnamese_translation || item.translation || '').toString();
+        const speakerName = item.speaker || 'Người nói';
+
+        const isLeft = speakers.indexOf(speakerName) === 0;
+
+        const row = document.createElement('div');
+        row.className = `message-row ${isLeft ? 'left' : 'right'} fade-in`;
+        row.style.animationDelay = `${index * 0.06}s`;
+
+        // compute a simple initial for avatar
+        const initial = speakerName.trim().charAt(0).toUpperCase() || 'U';
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (isLeft) {
+            row.innerHTML = `
+                <div class="avatar bot" title="${speakerName}">${initial}</div>
+                <div class="bubble left">
+                    <div class="text">${englishText}</div>
+                    ${vietnameseText ? `<div class="translation">${vietnameseText}</div>` : ''}
+                    <div class="msg-meta"><span class="speaker">${speakerName}</span><span class="time">${time}</span></div>
+                </div>
+            `;
+        } else {
+            row.innerHTML = `
+                <div class="bubble right">
+                    <div class="text">${englishText}</div>
+                    ${vietnameseText ? `<div class="translation">${vietnameseText}</div>` : ''}
+                    <div class="msg-meta"><span class="time">${time}</span><span class="speaker">${speakerName}</span></div>
+                </div>
+                <div class="avatar user" title="${speakerName}">${initial}</div>
+            `;
         }
+
+        scroller.appendChild(row);
+    });
+
+    container.appendChild(scroller);
+
+    // auto-scroll to bottom
+    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 80);
+}
 
         function displayExercises() {
             const container = document.getElementById('exercisesList');
@@ -599,14 +588,20 @@
                 let exerciseHTML = '';
                 
                 if (exercise.type === 'fill_in_blank') {
+                    const questionText = exercise.question || exercise.sentence || exercise.prompt || 'Điền từ thích hợp vào chỗ trống.';
+                    const options = Array.isArray(exercise.options) ? exercise.options : [];
+                    const correct = exercise.answer || '';
                     exerciseHTML = `
-                        <div class="mb-4">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-3">📝 Điền từ vào chỗ trống</h4>
-                            <p class="text-gray-700 mb-4">${exercise.question}</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                ${exercise.options.map(option => `
-                                    <button onclick="checkFillAnswer('${option}', '${exercise.answer}', this)" 
-                                            class="exercise-option bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded-lg transition-colors text-sm">
+                        <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-lg mr-3">📝</span>
+                                Điền từ vào chỗ trống
+                            </h4>
+                            <p class="text-gray-700 mb-6 font-medium">${questionText}</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                ${options.map(option => `
+                                    <button onclick="checkFillAnswer('${String(option).replace(/'/g, "\\'")}', '${String(correct).replace(/'/g, "\\'")}', this)" 
+                                            class="exercise-option bg-gradient-to-r from-orange-100 to-red-100 hover:from-orange-200 hover:to-red-200 text-gray-800 hover:text-orange-900 px-6 py-3 rounded-lg transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105 border-2 border-transparent hover:border-orange-400">
                                         ${option}
                                     </button>
                                 `).join('')}
@@ -615,46 +610,101 @@
                     `;
                 } else if (exercise.type === 'sentence_order') {
                     const words = exercise.scrambled || exercise.words || [];
+                    const correctAnswer = exercise.answer || '';
+                    
+                    // Xáo trộn các từ nếu chưa xáo trộn
+                    const shuffledWords = words.length > 0 ? [...words].sort(() => Math.random() - 0.5) : [];
+                    
                     exerciseHTML = `
-                        <div class="mb-4">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-3">🔤 Sắp xếp từ thành câu</h4>
-                            <p class="text-gray-600 mb-3">${exercise.question || 'Sắp xếp các từ sau thành câu hoàn chỉnh:'}</p>
-                            <div class="flex flex-wrap gap-2 mb-4">
-                                ${words.map(word => `
-                                    <span class="bg-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-300 transition-colors order-word" 
-                                          data-word="${word}" onclick="selectWord(this)">
-                                        ${word}
-                                    </span>
-                                `).join('')}
+                        <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+                            <h4 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white px-3 py-1 rounded-lg mr-3">🔤</span>
+                                Sắp xếp từ thành câu
+                            </h4>
+                            <p class="text-gray-700 mb-6 font-medium">Sắp xếp các từ dưới đây thành câu hoàn chỉnh:</p>
+                            
+                            <!-- Word Bank (Từ có thể chọn) -->
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border-2 border-dashed border-blue-300">
+                                <p class="text-sm font-bold text-gray-700 mb-4 flex items-center">
+                                    <span class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs mr-2">📚</span>
+                                    Chọn các từ (click để thêm vào):
+                                </p>
+                                <div class="flex flex-wrap gap-3" id="word-bank-${index}">
+                                    ${shuffledWords.map((word, wIndex) => `
+                                        <span class="bg-white hover:bg-blue-100 text-gray-800 border-2 border-gray-300 hover:border-blue-500 px-4 py-2 rounded-lg text-sm cursor-pointer font-semibold transition-all duration-200 order-word" 
+                                              data-word="${word}" 
+                                              onclick="selectWordForSentence(this, ${index})">
+                                            ${word}
+                                        </span>
+                                    `).join('')}
+                                </div>
                             </div>
-                            <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-4 mb-4 min-h-[50px]" id="sentence-area-${index}">
-                                <p class="text-gray-500 text-sm">Kéo các từ vào đây để tạo câu</p>
+                            
+                            <!-- Sentence Builder Area -->
+                            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-3 border-dashed border-green-400 rounded-xl p-6 mb-6" 
+                                 id="sentence-area-${index}">
+                                <p class="text-sm font-bold text-gray-700 mb-4 flex items-center">
+                                    <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs mr-2">📝</span>
+                                    Câu của bạn:
+                                </p>
+                                <div class="flex flex-wrap gap-3 min-h-[50px] bg-white rounded-lg p-4 border-2 border-green-200" id="sentence-order-${index}"></div>
                             </div>
-                            <button onclick="checkSentenceOrder('${exercise.answer}', ${index})" 
-                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
-                                Kiểm tra
-                            </button>
+                            
+                            <!-- Control Buttons -->
+                            <div class="flex gap-3 mb-6">
+                                <button onclick="checkSentenceOrder('${correctAnswer.replace(/'/g, "\\'")}', ${index})" 
+                                        class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                    ✅ Kiểm tra
+                                </button>
+                                <button onclick="resetSentenceOrder(${index})" 
+                                        class="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                    🔄 Làm lại
+                                </button>
+                            </div>
+                            
+                            <!-- Result Message -->
+                            <div id="result-${index}" class="hidden p-4 rounded-lg text-sm font-semibold"></div>
+                            
+                            <!-- Expected Answer -->
+                            <div id="answer-${index}" class="hidden p-4 rounded-lg bg-green-50 border-2 border-green-300">
+                                <p class="text-sm text-green-800 font-semibold">✅ Câu đúng: <strong class="text-base">${correctAnswer}</strong></p>
+                            </div>
                         </div>
                     `;
                 } else if (exercise.type === 'make_sentence') {
                     const words = exercise.words || [exercise.word];
                     const wordText = words.join(', ');
                     exerciseHTML = `
-                        <div class="mb-4">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-3">✏️ Tạo câu với từ</h4>
-                            <p class="text-gray-600 mb-3">${exercise.question || `Tạo một câu hoàn chỉnh với từ: <strong>${wordText}</strong>`}</p>
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 border-3 border-dashed border-purple-400 rounded-xl p-6 mb-6">
+                            <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                                <span class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm mr-2">✏️</span>
+                                Tạo câu với từ
+                            </h4>
+                            <p class="text-gray-700 mb-4 bg-white px-4 py-3 rounded-lg border-l-4 border-purple-500">
+                                ${exercise.question || `Tạo một câu hoàn chỉnh với từ: <strong class="text-purple-700">${wordText}</strong>`}
+                            </p>
+                            
                             <textarea 
-                                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                class="w-full p-4 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-gray-800 placeholder-gray-400 transition-all duration-200" 
                                 placeholder="Nhập câu của bạn ở đây..."
-                                rows="3"
+                                rows="4"
                                 id="sentence-input-${index}">
                             </textarea>
-                            <button onclick="checkMakeSentence('${exercise.answer || exercise.example}', ${index})" 
-                                    class="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
-                                Kiểm tra
-                            </button>
-                            <div class="mt-3 p-3 bg-gray-50 rounded-lg hidden" id="example-${index}">
-                                <p class="text-sm text-gray-600">Ví dụ: ${exercise.answer || exercise.example}</p>
+                            
+                            <div class="flex gap-3 mt-4">
+                                <button onclick="checkMakeSentence('${exercise.answer || exercise.example}', ${index})" 
+                                        class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                    ✅ Kiểm tra
+                                </button>
+                                <button onclick="resetMakeSentence(${index})" 
+                                        class="flex-1 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-6 py-3 rounded-lg font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                                    🔄 Làm lại
+                                </button>
+                            </div>
+                            
+                            <div class="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-dashed border-amber-300 rounded-lg hidden" id="result-${index}">
+                                <p class="text-sm font-semibold text-gray-800 mb-2" id="result-message-${index}"></p>
+                                <p class="text-sm text-gray-600" id="result-answer-${index}"></p>
                             </div>
                         </div>
                     `;
@@ -677,63 +727,119 @@
             });
         }
 
-        function selectWord(wordElement) {
-            const sentenceArea = wordElement.closest('.bg-white').querySelector('[id^="sentence-area-"]');
+        function selectWordForSentence(wordElement, exerciseIndex) {
+            const orderContainer = document.getElementById(`sentence-order-${exerciseIndex}`);
+            const word = wordElement.dataset.word;
+            const wordBank = document.getElementById(`word-bank-${exerciseIndex}`);
             
-            if (wordElement.classList.contains('selected')) {
-                // Nếu đã chọn, bỏ chọn
-                wordElement.classList.remove('selected', 'bg-blue-500', 'text-white');
-                wordElement.classList.add('bg-gray-200', 'text-gray-800');
-                // Xóa khỏi sentence area
-                const existingWord = sentenceArea.querySelector(`[data-word="${wordElement.dataset.word}"]`);
-                if (existingWord) {
-                    existingWord.remove();
+            // Tạo phần tử từ đã chọn
+            const selectedWordSpan = document.createElement('span');
+            selectedWordSpan.className = 'bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold cursor-pointer transition-all hover:shadow-lg shadow-md order-word';
+            selectedWordSpan.textContent = word;
+            selectedWordSpan.dataset.word = word;
+            
+            // Thêm nút xóa
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'ml-2 text-white font-bold hover:text-red-200';
+            removeBtn.textContent = '✕';
+            removeBtn.onclick = function(e) {
+                e.stopPropagation();
+                selectedWordSpan.remove();
+                // Đánh dấu từ gốc lại thành bình thường
+                const originalWord = wordBank.querySelector(`[data-word="${word}"]`);
+                if (originalWord) {
+                    originalWord.classList.remove('opacity-50');
                 }
-            } else {
-                // Nếu chưa chọn, thêm vào sentence area
-                wordElement.classList.add('selected', 'bg-blue-500', 'text-white');
-                wordElement.classList.remove('bg-gray-200', 'text-gray-800');
-                
-                const newWord = document.createElement('span');
-                newWord.className = 'bg-blue-500 text-white px-3 py-2 rounded-lg text-sm cursor-pointer mr-2 mb-2 inline-block order-word';
-                newWord.textContent = wordElement.dataset.word;
-                newWord.dataset.word = wordElement.dataset.word;
-                newWord.onclick = function() {
-                    selectWord(wordElement);
-                };
-                
-                // Xóa placeholder text nếu có
-                const placeholder = sentenceArea.querySelector('p');
-                if (placeholder && placeholder.textContent.includes('Kéo các từ')) {
-                    placeholder.remove();
+            };
+            selectedWordSpan.appendChild(removeBtn);
+            
+            // Click để xóa
+            selectedWordSpan.onclick = function() {
+                selectedWordSpan.remove();
+                const originalWord = wordBank.querySelector(`[data-word="${word}"]`);
+                if (originalWord) {
+                    originalWord.classList.remove('opacity-50');
                 }
-                
-                sentenceArea.appendChild(newWord);
-            }
+            };
+            
+            // Đánh dấu từ gốc là đã chọn (sáng đầu)
+            wordElement.classList.add('opacity-50');
+            
+            orderContainer.appendChild(selectedWordSpan);
+        }
+
+        function resetSentenceOrder(exerciseIndex) {
+            const orderContainer = document.getElementById(`sentence-order-${exerciseIndex}`);
+            const resultDiv = document.getElementById(`result-${exerciseIndex}`);
+            const answerDiv = document.getElementById(`answer-${exerciseIndex}`);
+            
+            orderContainer.innerHTML = '';
+            resultDiv.classList.add('hidden');
+            answerDiv.classList.add('hidden');
         }
 
         function checkSentenceOrder(correctAnswer, exerciseIndex) {
-            const sentenceArea = document.getElementById(`sentence-area-${exerciseIndex}`);
-            const selectedWords = sentenceArea.querySelectorAll('.order-word');
-            const userAnswer = Array.from(selectedWords).map(word => word.textContent.trim()).join(' ');
+            const orderContainer = document.getElementById(`sentence-order-${exerciseIndex}`);
+            const selectedWords = orderContainer.querySelectorAll('.order-word');
+            const userAnswer = Array.from(selectedWords).map(word => {
+                const text = word.textContent;
+                return text.replace('✕', '').trim();
+            }).join(' ').trim();
             
-            if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
-                sentenceArea.className = 'bg-green-50 border-2 border-green-500 rounded-lg p-4 mb-4 min-h-[50px]';
-                sentenceArea.innerHTML = `<p class="text-green-700 font-semibold">✓ Đúng rồi! ${correctAnswer}</p>`;
+            const resultDiv = document.getElementById(`result-${exerciseIndex}`);
+            const answerDiv = document.getElementById(`answer-${exerciseIndex}`);
+            
+            resultDiv.classList.remove('hidden');
+            
+            // Bỏ qua dấu câu và khoảng trắng khi so sánh
+            const normalizeText = (text) => {
+                return text
+                    .toLowerCase()
+                    .replace(/[.,!?;:\-]/g, '')  // Bỏ dấu câu
+                    .replace(/\s+/g, ' ')         // Chuẩn hóa khoảng trắng
+                    .trim();
+            };
+            
+            const userAnswerNormalized = normalizeText(userAnswer);
+            const correctAnswerNormalized = normalizeText(correctAnswer);
+            
+            if (userAnswerNormalized === correctAnswerNormalized) {
+                resultDiv.className = 'mt-4 hidden p-3 rounded-lg text-sm bg-green-100 border border-green-400 text-green-700';
+                resultDiv.innerHTML = '✅ <strong>Chính xác!</strong> Câu của bạn đúng rồi!';
+                resultDiv.classList.remove('hidden');
             } else {
-                sentenceArea.className = 'bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-4 min-h-[50px]';
-                sentenceArea.innerHTML = `<p class="text-red-700">✗ Chưa đúng. Đáp án: ${correctAnswer}</p>`;
+                resultDiv.className = 'mt-4 hidden p-3 rounded-lg text-sm bg-red-100 border border-red-400 text-red-700';
+                resultDiv.innerHTML = `❌ <strong>Chưa đúng.</strong> Bạn viết: "${userAnswer}"`;
+                resultDiv.classList.remove('hidden');
+                answerDiv.classList.remove('hidden');
             }
         }
 
+
         function checkMakeSentence(example, exerciseIndex) {
             const input = document.getElementById(`sentence-input-${exerciseIndex}`);
-            const exampleDiv = document.getElementById(`example-${exerciseIndex}`);
+            const resultDiv = document.getElementById(`result-${exerciseIndex}`);
+            const resultMessage = document.getElementById(`result-message-${exerciseIndex}`);
+            const resultAnswer = document.getElementById(`result-answer-${exerciseIndex}`);
             
             if (input.value.trim()) {
-                exampleDiv.classList.remove('hidden');
+                resultDiv.classList.remove('hidden');
+                resultMessage.innerHTML = '✅ Tốt! Bạn đã tạo được một câu. Dưới đây là ví dụ từ bài học:';
+                resultAnswer.innerHTML = `<strong class="text-purple-700">"${example}"</strong>`;
                 input.disabled = true;
+            } else {
+                resultDiv.classList.add('hidden');
             }
+        }
+
+        function resetMakeSentence(exerciseIndex) {
+            const input = document.getElementById(`sentence-input-${exerciseIndex}`);
+            const resultDiv = document.getElementById(`result-${exerciseIndex}`);
+            
+            input.value = '';
+            input.disabled = false;
+            resultDiv.classList.add('hidden');
+            input.focus();
         }
 
         function speakWord(text) {

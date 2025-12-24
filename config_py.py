@@ -35,7 +35,10 @@ def startup():
     create_table_ai_voice()
     create_table_ai_chat()
     create_table_bai_kiem_tra()
-    add_admin_first("admin12", "admi22n@gmail.com", "admin123")
+    create_table_lich_su_chat()
+    create_table_xac_thuc_email()
+    create_table_otp_quen_mat_khau()
+    add_admin_first("admin", "admin@gmail.com", "123")
     print("✅ Database và bảng đã được khởi tạo, admin mặc định đã được thêm.")
     # show_all_users()
 

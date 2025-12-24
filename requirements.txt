@@ -7,4 +7,6 @@ google-generativeai
 SpeechRecognition
 gTTS
 sounddevice
-scipy
+scipysentence-transformers
+faiss-cpu
+numpy

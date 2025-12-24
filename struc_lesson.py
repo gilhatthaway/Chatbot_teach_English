@@ -1,49 +1,9 @@
 from copy import deepcopy
-import re
-
-def clean_markdown_text(text):
-    """
-    Xóa dấu markdown (**, *, __, _, #, ##, ###, ~~, `) khỏi text.
-    
-    Args:
-        text: Chuỗi cần xử lý
-    
-    Returns:
-        Chuỗi đã làm sạch
-    
-    Ví dụ:
-        "**burger**" -> "burger"
-        "This is **bold** text" -> "This is bold text"
-        "~~strikethrough~~" -> "strikethrough"
-    """
-    if not isinstance(text, str):
-        return str(text)
-    
-    # Xóa bold (**text**)
-    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    
-    # Xóa italic (*text* hoặc _text_)
-    text = re.sub(r'\*(.*?)\*', r'\1', text)
-    text = re.sub(r'_(.*?)_', r'\1', text)
-    
-    # Xóa bold với __ (__text__)
-    text = re.sub(r'__(.*?)__', r'\1', text)
-    
-    # Xóa strikethrough (~~text~~)
-    text = re.sub(r'~~(.*?)~~', r'\1', text)
-    
-    # Xóa inline code (`text`)
-    text = re.sub(r'`(.*?)`', r'\1', text)
-    
-    # Xóa heading markers (# ## ### etc)
-    text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
-    
-    return text.strip()
 
 LESSON_TEMPLATE = {
     "topic": "",
     "vocabulary": [
-        {"word": "", "pronunciation": "", "english_meaning": "", "vietnamese_meaning": "", "example": ""} for _ in range(5)
+        {"word": "", "pronunciation": "", "english_meaning": "", "vietnamese_meaning": "", "example": ""} for _ in range(10)
     ],
     "example_sentences": [
         {"english": "", "translation": ""} for _ in range(5)
@@ -55,27 +15,11 @@ LESSON_TEMPLATE = {
         {"speaker": "B", "text": "", "translation": ""}
     ],
     "exercises": [
-        {
-            "type": "fill_in_blank",
-            "question": "Chọn từ đúng để điền vào chỗ trống.",
-            "items": [
-                {"sentence": "", "options": [], "answer": ""}
-            ]
-        },
-        {
-            "type": "sentence_order",
-            "question": "Sắp xếp các từ sau thành câu hoàn chỉnh.",
-            "items": [
-                {"scrambled_words": [], "answer": ""}
-            ]
-        },
-        {
-            "type": "make_sentence",
-            "question": "Tạo một câu hoàn chỉnh sử dụng các từ cho sẵn.",
-            "items": [
-                {"prompt_words": [], "example_answer": ""}
-            ]
-        }
+        {"type": "fill_in_blank", "question": "", "options": [], "answer": ""} for _ in range(3)
+    ] + [
+        {"type": "sentence_order", "scrambled": [], "answer": ""} for _ in range(3)
+    ] + [
+        {"type": "make_sentence", "word": "", "example": ""} for _ in range(3)
     ]
 }
 
@@ -83,13 +27,11 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
     """
     Chuẩn hóa JSON bài học AI trả về sang cấu trúc chuẩn LESSON_TEMPLATE.
     """
-    # Đảm bảo ai_json là dictionary
     if not isinstance(ai_json, dict):
-        print(f"⚠️ ai_json không phải dict: {type(ai_json)}, sử dụng giá trị mặc định")
-        ai_json = {}
-    
+        ai_json = {"topic": topic}
+
     result = deepcopy(LESSON_TEMPLATE)
-    result['topic'] = clean_markdown_text(ai_json.get('topic', topic))
+    result['topic'] = ai_json.get('topic', topic)
 
     # --- Vocabulary ---
     vocab_mapping = {
@@ -99,25 +41,26 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         "vietnamese_meaning": ["vietnamese_meaning", "vietnamese_definition", "translation"],
         "example": ["example"]
     }
-    
     vocab_list = ai_json.get('vocabulary', [])
     if not isinstance(vocab_list, list):
-        print(f"⚠️ vocabulary không phải list: {type(vocab_list)}")
-        vocab_list = []
-    
+        vocab_list = [vocab_list]
+
     for i, vocab in enumerate(vocab_list):
+        if not isinstance(vocab, dict):
+            if isinstance(vocab, str):
+                vocab = {"word": vocab}
+            else:
+                continue
+
         if i >= len(result['vocabulary']):
             break
-        if not isinstance(vocab, dict):
-            print(f"⚠️ vocab item {i} không phải dict: {type(vocab)}")
-            continue
-        
         new_vocab = {}
         for k, keys in vocab_mapping.items():
             for key in keys:
                 if key in vocab:
-                    new_vocab[k] = clean_markdown_text(vocab[key])
+                    new_vocab[k] = vocab[key]
                     break
+
             else:
                 new_vocab[k] = ""
         result['vocabulary'][i].update(new_vocab)
@@ -130,21 +73,22 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
     # Tìm examples từ AI response 
     examples_data = ai_json.get('examples', ai_json.get('example_sentences', []))
     if not isinstance(examples_data, list):
-        print(f"⚠️ examples_data không phải list: {type(examples_data)}")
-        examples_data = []
-    
+        examples_data = [examples_data]
+
     for i, ex in enumerate(examples_data):
+        if not isinstance(ex, dict):
+            if isinstance(ex, str):
+                ex = {"sentence": ex}
+            else:
+                continue
         if i >= len(result['example_sentences']):
             break
-        if not isinstance(ex, dict):
-            print(f"⚠️ example item {i} không phải dict: {type(ex)}")
-            continue
-        
+
         new_ex = {}
         for k, keys in ex_mapping.items():
             for key in keys:
                 if key in ex:
-                    new_ex[k] = clean_markdown_text(ex[key])
+                    new_ex[k] = ex[key]
                     break
             else:
                 new_ex[k] = ""
@@ -158,21 +102,21 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
     }
     conv_list = ai_json.get('conversation', [])
     if not isinstance(conv_list, list):
-        print(f"⚠️ conversation không phải list: {type(conv_list)}")
-        conv_list = []
+        conv_list = [conv_list]
     
     # Xử lý conversation có thể có cấu trúc khác nhau
     for i, msg in enumerate(conv_list):
         if not isinstance(msg, dict):
-            print(f"⚠️ conversation item {i} không phải dict: {type(msg)}")
-            continue
-        
+            if isinstance(msg, str):
+                msg = {"dialogue": msg}
+            else:
+                continue
         new_msg = {}
-        
+
         # Xử lý trường hợp dialogue chứa cả A và B trong một string
         if 'dialogue' in msg and isinstance(msg['dialogue'], str):
-            dialogue_text = clean_markdown_text(msg['dialogue'])
-            translation = clean_markdown_text(msg.get('vietnamese_translation', ''))
+            dialogue_text = msg['dialogue']
+            translation = msg.get('vietnamese_translation', '')
             
             # Parse format "A: Do you like apples? B: Yes, I love apples!"
             if "A:" in dialogue_text and "B:" in dialogue_text:
@@ -187,7 +131,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
                         else:
                             result['conversation'][i * 2].update(new_msg_a)
                     
-                    # Thêm message B  
+                    # Thêm message B
                     b_text = parts[1].strip()
                     if b_text:
                         new_msg_b = {"speaker": "B", "text": b_text, "translation": translation}
@@ -201,7 +145,7 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
         for k, keys in conv_mapping.items():
             for key in keys:
                 if key in msg:
-                    new_msg[k] = clean_markdown_text(msg[key])
+                    new_msg[k] = msg[key]
                     break
             else:
                 new_msg[k] = ""
@@ -212,194 +156,166 @@ def standardize_lesson(ai_json: dict, topic: str) -> dict:
             result['conversation'][i].update(new_msg)
 
     # --- Exercises ---
-    exercises_list = ai_json.get('exercises', [])
-    if not isinstance(exercises_list, list):
-        print(f"⚠️ exercises không phải list: {type(exercises_list)}")
-        exercises_list = []
-    
-    # Nếu AI trả về exercises, xử lý cấu trúc của nó
-    processed_exercises = []
-    for exercise in exercises_list:
-        if not isinstance(exercise, dict):
-            print(f"⚠️ exercise item không phải dict: {type(exercise)}")
-            continue
-        
-        exercise_type = exercise.get('type', '')
-        
-        # Nếu exercise có cấu trúc mới với items array
-        if 'items' in exercise and isinstance(exercise['items'], list):
-            # Normalize từng item trong items array
-            normalized_items = []
-            for item in exercise['items']:
-                if not isinstance(item, dict):
+    exercises_data = ai_json.get('exercises')
+
+    if exercises_data:
+        if not isinstance(exercises_data, list):
+            exercises_data = [exercises_data]
+
+        normalized_exercises = []
+        for ex in exercises_data:
+            if not isinstance(ex, dict):
+                continue
+
+            ex_type = ex.get('type') or ex.get('exercise_type')
+            if ex_type == 'fill_in_blank':
+                question = ex.get('question') or ex.get('sentence') or ''
+                options = ex.get('options') or ex.get('choices') or []
+                answer = ex.get('answer') or ex.get('correct') or ''
+
+                if isinstance(options, str):
+                    options = [opt.strip() for opt in options.split(',') if opt.strip()]
+                if not isinstance(options, list):
+                    options = [options] if options else []
+
+                if answer and answer not in options:
+                    options.append(answer)
+
+                if not question or not options:
                     continue
-                
-                if exercise_type == 'fill_in_blank':
-                    normalized_items.append({
-                        "sentence": clean_markdown_text(item.get('sentence', '')),
-                        "options": [clean_markdown_text(opt) for opt in item.get('options', [])],
-                        "answer": clean_markdown_text(item.get('answer', ''))
-                    })
-                elif exercise_type == 'sentence_order':
-                    # Xử lý cả scrambled_words và scrambled
-                    scrambled = item.get('scrambled_words') or item.get('scrambled', [])
-                    cleaned_scrambled = [clean_markdown_text(w) for w in scrambled]
-                    normalized_items.append({
-                        "scrambled_words": cleaned_scrambled,
-                        "answer": clean_markdown_text(item.get('answer', ''))
-                    })
-                elif exercise_type == 'make_sentence':
-                    # Xử lý cả prompt_words/words và example_answer/suggested_answer
-                    words = item.get('prompt_words') or item.get('words', [])
-                    cleaned_words = [clean_markdown_text(w) for w in words]
-                    answer = item.get('example_answer') or item.get('suggested_answer', '')
-                    normalized_items.append({
-                        "prompt_words": cleaned_words,
-                        "example_answer": clean_markdown_text(answer)
-                    })
-            
-            if normalized_items:
-                processed_exercises.append({
-                    "type": exercise_type,
-                    "question": clean_markdown_text(exercise.get('question', '')),
-                    "items": normalized_items
+
+                normalized_exercises.append({
+                    "type": "fill_in_blank",
+                    "question": question,
+                    "options": options,
+                    "answer": answer
                 })
-        # Nếu exercise có cấu trúc cũ, convert sang cấu trúc mới
-        elif exercise_type == 'fill_in_blank' and 'options' in exercise:
-            processed_exercises.append({
-                "type": exercise_type,
-                "question": clean_markdown_text(exercise.get('question', 'Chọn từ đúng để điền vào chỗ trống.')),
-                "items": [{
-                    "sentence": clean_markdown_text(exercise.get('question', '')),
-                    "options": [clean_markdown_text(opt) for opt in exercise.get('options', [])],
-                    "answer": clean_markdown_text(exercise.get('answer', ''))
-                }]
-            })
-        elif exercise_type == 'sentence_order' and ('scrambled' in exercise or 'scrambled_words' in exercise):
-            scrambled = exercise.get('scrambled_words') or exercise.get('scrambled', [])
-            cleaned_scrambled = [clean_markdown_text(w) for w in scrambled]
-            processed_exercises.append({
-                "type": exercise_type,
-                "question": clean_markdown_text(exercise.get('question', 'Sắp xếp các từ sau thành câu hoàn chỉnh.')),
-                "items": [{
-                    "scrambled_words": cleaned_scrambled,
-                    "answer": clean_markdown_text(exercise.get('answer', ''))
-                }]
-            })
-        elif exercise_type == 'make_sentence':
-            words = exercise.get('prompt_words') or exercise.get('words', [exercise.get('word', '')])
-            cleaned_words = [clean_markdown_text(w) for w in words]
-            answer = exercise.get('example_answer') or exercise.get('suggested_answer', '')
-            processed_exercises.append({
-                "type": exercise_type,
-                "question": clean_markdown_text(exercise.get('question', 'Tạo một câu hoàn chỉnh sử dụng các từ cho sẵn.')),
-                "items": [{
-                    "prompt_words": cleaned_words,
-                    "example_answer": clean_markdown_text(answer)
-                }]
-            })
-    
-    # Nếu AI không trả về exercises hoặc exercises rỗng, tạo exercises mẫu từ vocabulary
-    if not processed_exercises:
-        result['exercises'] = create_sample_exercises(result['vocabulary'])
+
+            elif ex_type == 'sentence_order':
+                scrambled = ex.get('scrambled') or ex.get('words') or []
+                if isinstance(scrambled, str):
+                    scrambled = [w.strip() for w in scrambled.split() if w.strip()]
+                answer = ex.get('answer') or ex.get('solution') or ''
+
+                normalized_exercises.append({
+                    "type": "sentence_order",
+                    "scrambled": scrambled,
+                    "answer": answer
+                })
+
+            elif ex_type == 'make_sentence':
+                word = ex.get('word') or ex.get('words') or ''
+                example = ex.get('example') or ex.get('answer') or ''
+
+                normalized_exercises.append({
+                    "type": "make_sentence",
+                    "word": word,
+                    "example": example
+                })
+
+        # Nếu không normalize được bài tập nào hợp lệ, fallback sang bài tập mẫu
+        result['exercises'] = normalized_exercises or create_sample_exercises(result['vocabulary'])
     else:
-        result['exercises'] = processed_exercises
+        # Nếu AI không trả về exercises, tạo exercises mẫu từ vocabulary
+        result['exercises'] = create_sample_exercises(result['vocabulary'])
+
+        # Đảm bảo mỗi loại bài tập có ít nhất 3 bài
+        result['exercises'] = ensure_exercise_counts(result['exercises'], result['vocabulary'])
 
     return result
 
 def create_sample_exercises(vocabulary):
-    """Tạo exercises mẫu từ vocabulary với cấu trúc mới (items array)"""
+    """Tạo exercises mẫu từ vocabulary"""
     exercises = []
     
-    # Fill in blank exercises với items array
-    fill_in_blank_items = []
-    for i, vocab in enumerate(vocabulary[:5]):
+    # Fill in blank exercises (3 bài)
+    for i, vocab in enumerate(vocabulary[:3]):
         if vocab.get('word') and vocab.get('example'):
-            word = clean_markdown_text(vocab['word'])
-            example = clean_markdown_text(vocab['example'])
+            word = vocab['word'].lower()
+            example = vocab['example']
             
             # Tạo câu hỏi điền từ
-            if word.lower() in example.lower():
+            if word in example.lower():
                 question = example.replace(word, '_____').replace(word.capitalize(), '_____')
-                # Tạo options (4 lựa chọn)
+                # Tạo options
                 options = [word]
-                other_words = [clean_markdown_text(v.get('word', '')) for v in vocabulary if v != vocab and v.get('word')]
+                other_words = [v.get('word', '').lower() for v in vocabulary if v != vocab and v.get('word')]
                 options.extend(other_words[:3])
                 
-                if len(options) > 0 and word:
-                    fill_in_blank_items.append({
-                        "sentence": f"{i+1}. {question}",
-                        "options": options,
-                        "answer": word
-                    })
+                exercises.append({
+                    "type": "fill_in_blank",
+                    "question": question,
+                    "options": options,
+                    "answer": word
+                })
     
-    if fill_in_blank_items:
-        exercises.append({
-            "type": "fill_in_blank",
-            "question": "Chọn từ đúng để điền vào chỗ trống.",
-            "items": fill_in_blank_items
-        })
-    else:
-        # Tạo default items nếu vocabulary trống
-        exercises.append({
-            "type": "fill_in_blank",
-            "question": "Chọn từ đúng để điền vào chỗ trống.",
-            "items": [
-                {"sentence": "1. _____ is a popular fast food.", "options": ["Pizza", "Book", "Car", "House"], "answer": "Pizza"}
-            ]
-        })
-    
-    # Sentence order exercises với items array
-    sentence_order_items = []
-    for i, vocab in enumerate(vocabulary[:4]):
+    # Sentence order exercises (3 bài)
+    for i, vocab in enumerate(vocabulary[:3]):
         if vocab.get('example'):
-            example = clean_markdown_text(vocab['example'])
+            example = vocab['example']
             words = example.split()
             if len(words) > 3:
-                sentence_order_items.append({
-                    "scrambled_words": words,
+                exercises.append({
+                    "type": "sentence_order", 
+                    "scrambled": words,
                     "answer": example
                 })
     
-    if sentence_order_items:
-        exercises.append({
-            "type": "sentence_order",
-            "question": "Sắp xếp các từ sau thành câu hoàn chỉnh.",
-            "items": sentence_order_items
-        })
-    else:
-        # Tạo default items nếu vocabulary trống
-        exercises.append({
-            "type": "sentence_order",
-            "question": "Sắp xếp các từ sau thành câu hoàn chỉnh.",
-            "items": [
-                {"scrambled_words": ["like", "I", "pizza"], "answer": "I like pizza"}
-            ]
-        })
-    
-    # Make sentence exercises với items array
-    make_sentence_items = []
+    # Make sentence exercises (3 bài)
     for i, vocab in enumerate(vocabulary[:3]):
         if vocab.get('word') and vocab.get('example'):
-            make_sentence_items.append({
-                "prompt_words": [clean_markdown_text(vocab['word'])],
-                "example_answer": clean_markdown_text(vocab['example'])
+            exercises.append({
+                "type": "make_sentence",
+                "word": vocab['word'],
+                "example": vocab['example']
             })
     
-    if make_sentence_items:
-        exercises.append({
-            "type": "make_sentence",
-            "question": "Tạo một câu hoàn chỉnh sử dụng các từ cho sẵn.",
-            "items": make_sentence_items
-        })
-    else:
-        # Tạo default items nếu vocabulary trống
-        exercises.append({
-            "type": "make_sentence",
-            "question": "Tạo một câu hoàn chỉnh sử dụng các từ cho sẵn.",
-            "items": [
-                {"prompt_words": ["pizza", "love"], "example_answer": "I love pizza"}
-            ]
-        })
-    
     return exercises
+
+
+def ensure_exercise_counts(exercises, vocabulary):
+    """Đảm bảo mỗi loại bài tập có tối thiểu 3 bài, bổ sung từ mẫu nếu thiếu."""
+    target_types = ["fill_in_blank", "sentence_order", "make_sentence"]
+    sample_pool = create_sample_exercises(vocabulary)
+
+    # Gom exercises mẫu theo loại để dùng khi thiếu
+    sample_by_type = {
+        ex_type: [ex for ex in sample_pool if ex.get("type") == ex_type]
+        for ex_type in target_types
+    }
+
+    final_exercises = []
+
+    for ex_type in target_types:
+        typed_exercises = [ex for ex in exercises if ex.get('type') == ex_type]
+
+        # Bổ sung từ sample nếu chưa đủ
+        while len(typed_exercises) < 3 and sample_by_type[ex_type]:
+            typed_exercises.append(sample_by_type[ex_type].pop(0))
+
+        # Nếu vẫn thiếu, thêm placeholder cơ bản
+        while len(typed_exercises) < 3:
+            if ex_type == "fill_in_blank":
+                typed_exercises.append({
+                    "type": "fill_in_blank",
+                    "question": "Điền từ thích hợp vào chỗ trống.",
+                    "options": ["A", "B", "C"],
+                    "answer": ""
+                })
+            elif ex_type == "sentence_order":
+                typed_exercises.append({
+                    "type": "sentence_order",
+                    "scrambled": [],
+                    "answer": ""
+                })
+            elif ex_type == "make_sentence":
+                typed_exercises.append({
+                    "type": "make_sentence",
+                    "word": "",
+                    "example": ""
+                })
+
+        # Chỉ giữ 3 bài cho mỗi loại để giao diện hiển thị ổn định
+        final_exercises.extend(typed_exercises[:3])
+
+    return final_exercises

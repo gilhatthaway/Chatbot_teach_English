@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,8 +16,8 @@
             overflow-x: hidden;
             position: relative;
         }
-
         /* Animated background particles */
+        
         .particles {
             position: fixed;
             top: 0;
@@ -26,7 +27,7 @@
             pointer-events: none;
             z-index: 1;
         }
-
+        
         .particle {
             position: absolute;
             width: 4px;
@@ -35,13 +36,20 @@
             border-radius: 50%;
             animation: float 6s ease-in-out infinite;
         }
-
+        
         @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
-            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
+            0%,
+            100% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+                opacity: 0.8;
+            }
         }
-
         /* Navbar */
+        
         .navbar {
             position: relative;
             z-index: 10;
@@ -53,21 +61,22 @@
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .nav-left, .nav-right {
+        
+        .nav-left,
+        .nav-right {
             flex: 1;
         }
-
+        
         .nav-left {
             display: flex;
             justify-content: flex-start;
         }
-
+        
         .nav-right {
             display: flex;
             justify-content: flex-end;
         }
-
+        
         .logo {
             display: flex;
             align-items: center;
@@ -76,7 +85,7 @@
             font-size: 1.5rem;
             font-weight: bold;
         }
-
+        
         .home-btn {
             display: flex;
             align-items: center;
@@ -91,12 +100,12 @@
             font-size: 0.9rem;
             font-weight: 500;
         }
-
+        
         .home-btn:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-2px);
         }
-
+        
         .user-info {
             display: flex;
             align-items: center;
@@ -106,17 +115,17 @@
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
+        
         .user-icon {
             font-size: 1.2rem;
         }
-
+        
         .username {
             color: white;
             font-weight: 500;
             font-size: 0.9rem;
         }
-
+        
         .logout-btn {
             background: rgba(255, 69, 69, 0.8);
             border: none;
@@ -129,13 +138,13 @@
             margin-left: 0.5rem;
             transition: all 0.3s ease;
         }
-
+        
         .logout-btn:hover {
             background: rgba(255, 69, 69, 1);
             transform: translateY(-1px);
         }
-
         /* Main content */
+        
         .main-content {
             position: relative;
             z-index: 5;
@@ -147,7 +156,7 @@
             padding: 2rem;
             text-align: center;
         }
-
+        
         .hero-title {
             color: white;
             font-size: 3rem;
@@ -156,7 +165,7 @@
             text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             animation: fadeInUp 1s ease-out;
         }
-
+        
         .hero-subtitle {
             color: rgba(255, 255, 255, 0.9);
             font-size: 1.2rem;
@@ -164,7 +173,7 @@
             max-width: 600px;
             animation: fadeInUp 1s ease-out 0.2s both;
         }
-
+        
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -175,13 +184,13 @@
                 transform: translateY(0);
             }
         }
-
         /* Voice interaction area */
+        
         .voice-container {
             position: relative;
             margin: 2rem 0;
         }
-
+        
         .voice-button {
             width: 150px;
             height: 150px;
@@ -199,24 +208,29 @@
             position: relative;
             z-index: 10;
         }
-
+        
         .voice-button:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
         }
-
+        
         .voice-button.recording {
             background: linear-gradient(135deg, #FF4444 0%, #FF6666 100%);
             color: white;
             animation: pulse 1.5s ease-in-out infinite;
         }
-
+        
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
         }
-
         /* Sound waves animation */
+        
         .sound-waves {
             position: absolute;
             top: 50%;
@@ -226,7 +240,7 @@
             height: 200px;
             pointer-events: none;
         }
-
+        
         .wave {
             position: absolute;
             top: 50%;
@@ -236,11 +250,11 @@
             border-radius: 50%;
             opacity: 0;
         }
-
+        
         .wave.active {
             animation: ripple 2s ease-out infinite;
         }
-
+        
         @keyframes ripple {
             0% {
                 width: 150px;
@@ -253,8 +267,8 @@
                 opacity: 0;
             }
         }
-
         /* Status display */
+        
         .status-display {
             margin-top: 2rem;
             min-height: 100px;
@@ -263,7 +277,7 @@
             align-items: center;
             justify-content: center;
         }
-
+        
         .status-text {
             color: white;
             font-size: 1.1rem;
@@ -272,12 +286,12 @@
             transform: translateY(20px);
             transition: all 0.5s ease;
         }
-
+        
         .status-text.show {
             opacity: 1;
             transform: translateY(0);
         }
-
+        
         .response-area {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -290,24 +304,24 @@
             transform: translateY(20px);
             transition: all 0.5s ease;
         }
-
+        
         .response-area.show {
             opacity: 1;
             transform: translateY(0);
         }
-
+        
         .user-speech {
             color: #FFE4B5;
             font-style: italic;
             margin-bottom: 1rem;
         }
-
+        
         .ai-response {
             color: #98FB98;
             font-weight: 500;
         }
-
         /* Button text */
+        
         .button-text {
             position: absolute;
             bottom: -50px;
@@ -318,8 +332,8 @@
             font-weight: 500;
             opacity: 0.8;
         }
-
         /* Footer */
+        
         .footer {
             position: relative;
             z-index: 10;
@@ -329,49 +343,44 @@
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
         }
-
         /* Responsive design */
+        
         @media (max-width: 768px) {
             .navbar {
                 padding: 1rem;
             }
-
-            .home-btn, .user-info {
+            .home-btn,
+            .user-info {
                 font-size: 0.8rem;
                 padding: 0.4rem 0.8rem;
             }
-
             .logo {
                 font-size: 1.2rem;
             }
-
             .hero-title {
                 font-size: 2rem;
             }
-
             .hero-subtitle {
                 font-size: 1rem;
                 padding: 0 1rem;
             }
-
             .voice-button {
                 width: 120px;
                 height: 120px;
                 font-size: 2.5rem;
             }
-
             .response-area {
                 margin: 1rem;
                 padding: 1rem;
             }
         }
-
         /* Loading animation */
+        
         .loading-dots {
             display: inline-flex;
             gap: 4px;
         }
-
+        
         .loading-dots span {
             width: 8px;
             height: 8px;
@@ -379,12 +388,19 @@
             background: currentColor;
             animation: loadingDots 1.4s ease-in-out infinite both;
         }
-
-        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-
+        
+        .loading-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
         @keyframes loadingDots {
-            0%, 80%, 100% {
+            0%,
+            80%,
+            100% {
                 transform: scale(0);
                 opacity: 0.5;
             }
@@ -395,6 +411,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Animated background particles -->
     <div class="particles" id="particles"></div>
@@ -413,10 +430,13 @@
         </div>
         <div class="nav-right">
             <div class="user-info">
-                <span class="user-icon">👤</span>
+                <img id="voiceAvatar" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" style="width:35px; height:35px; border-radius:50%; object-fit:cover; border:2px solid white;">
+
                 <span class="username" id="usernameDisplay">User</span>
+
                 <button class="logout-btn" id="logoutBtn">Logout</button>
             </div>
+
         </div>
     </nav>
 
@@ -431,11 +451,11 @@
                 <div class="wave"></div>
                 <div class="wave"></div>
             </div>
-            
+
             <button class="voice-button" id="voiceButton">
                 <span id="micIcon">🎤</span>
             </button>
-            
+
             <div class="button-text" id="buttonText">Tap to Speak</div>
         </div>
 
@@ -454,148 +474,195 @@
     </footer>
 
     <script>
-    // Create floating particles
-    function createParticles() {
-        const particlesContainer = document.getElementById('particles');
-        const particleCount = 50;
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
 
-        for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.top = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 6 + 's';
-            particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
-            particlesContainer.appendChild(particle);
-        }
-    }
-
-    // Voice interaction logic
-    class VoiceAssistant {
-        constructor() {
-            this.isRecording = false;
-            this.voiceButton = document.getElementById('voiceButton');
-            this.micIcon = document.getElementById('micIcon');
-            this.buttonText = document.getElementById('buttonText');
-            this.statusText = document.getElementById('statusText');
-            this.responseArea = document.getElementById('responseArea');
-            this.userSpeech = document.getElementById('userSpeech');
-            this.aiResponse = document.getElementById('aiResponse');
-            this.waves = document.querySelectorAll('.wave');
-            
-            this.init();
-        }
-
-        init() {
-            this.voiceButton.addEventListener('click', () => this.toggleRecording());
-            createParticles();
-        }
-
-        toggleRecording() {
-            if (!this.isRecording) {
-                this.startRecording();
-            } else {
-                this.stopRecording();
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
             }
         }
 
-        startRecording() {
-            this.isRecording = true;
-            this.voiceButton.classList.add('recording');
-            this.micIcon.textContent = '⏹️';
-            this.buttonText.textContent = 'Stop Recording';
-            this.showStatus('Listening...');
-            this.startSoundWaves();
+        // Voice interaction logic
+        class VoiceAssistant {
+            constructor() {
+                this.isRecording = false;
+                this.voiceButton = document.getElementById('voiceButton');
+                this.micIcon = document.getElementById('micIcon');
+                this.buttonText = document.getElementById('buttonText');
+                this.statusText = document.getElementById('statusText');
+                this.responseArea = document.getElementById('responseArea');
+                this.userSpeech = document.getElementById('userSpeech');
+                this.aiResponse = document.getElementById('aiResponse');
+                this.waves = document.querySelectorAll('.wave');
 
-            const id_user = localStorage.getItem("id_user"); // 🔹 lấy id_user
-            fetch("/start_record", { 
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id_user: id_user }) // 🔹 gửi id_user
-            });
-        }
+                this.init();
+            }
 
-        stopRecording() {
-            this.isRecording = false;
-            this.voiceButton.classList.remove('recording');
-            this.micIcon.textContent = '🎤';
-            this.buttonText.textContent = 'Tap to Speak';
-            this.stopSoundWaves();
-            this.showStatus('Processing...');
+            init() {
+                this.voiceButton.addEventListener('click', () => this.toggleRecording());
+                createParticles();
+            }
 
-            const id_user = localStorage.getItem("id_user"); // 🔹 lấy id_user
-            fetch("/stop_record", { 
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id_user: id_user }) // 🔹 gửi id_user
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "ok") {
-                    this.userSpeech.textContent = `Bạn nói: "${data.user_text}"`;
-                    this.aiResponse.textContent = `AI: "${data.bot_reply}"`;
-                    this.responseArea.classList.add("show");
-                    this.hideStatus();
+            toggleRecording() {
+                if (!this.isRecording) {
+                    this.startRecording();
                 } else {
-                    this.showStatus("❌ " + data.message);
+                    this.stopRecording();
                 }
-            });
+            }
+
+            startRecording() {
+                this.isRecording = true;
+                this.voiceButton.classList.add('recording');
+                this.micIcon.textContent = '⏹️';
+                this.buttonText.textContent = 'Stop Recording';
+                this.showStatus('Listening...');
+                this.startSoundWaves();
+
+                const id_nguoi_dung = localStorage.getItem("id_nguoi_dung"); // 🔹 lấy id_nguoi_dung
+                fetch("/start_record", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                            id_nguoi_dung: id_nguoi_dung
+                        }) // 🔹 gửi id_nguoi_dung
+                });
+            }
+
+            stopRecording() {
+                this.isRecording = false;
+                this.voiceButton.classList.remove('recording');
+                this.micIcon.textContent = '🎤';
+                this.buttonText.textContent = 'Tap to Speak';
+                this.stopSoundWaves();
+                this.showStatus('Processing...');
+
+                const id_nguoi_dung = localStorage.getItem("id_nguoi_dung"); // 🔹 lấy id_nguoi_dung
+                fetch("/stop_record", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                                id_nguoi_dung: id_nguoi_dung
+                            }) // 🔹 gửi id_nguoi_dung
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === "ok") {
+                            this.userSpeech.textContent = `Bạn nói: "${data.user_text}"`;
+                            this.aiResponse.textContent = `AI: "${data.bot_reply}"`;
+                            this.responseArea.classList.add("show");
+                            this.hideStatus();
+                        } else {
+                            this.showStatus("❌ " + data.message);
+                        }
+                    });
+            }
+
+            startSoundWaves() {
+                this.waves.forEach((wave, index) => {
+                    setTimeout(() => {
+                        wave.classList.add('active');
+                    }, index * 300);
+                });
+            }
+
+            stopSoundWaves() {
+                this.waves.forEach(wave => {
+                    wave.classList.remove('active');
+                });
+            }
+
+            showStatus(text) {
+                this.statusText.innerHTML = text;
+                this.statusText.classList.add('show');
+            }
+
+            hideStatus() {
+                this.statusText.classList.remove('show');
+            }
         }
 
-        startSoundWaves() {
-            this.waves.forEach((wave, index) => {
-                setTimeout(() => {
-                    wave.classList.add('active');
-                }, index * 300);
-            });
-        }
+        // Initialize the voice assistant
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoiceAssistant();
 
-        stopSoundWaves() {
-            this.waves.forEach(wave => {
-                wave.classList.remove('active');
-            });
-        }
+            // Check login status
+            const username = localStorage.getItem("ten_dang_nhap");
+            const role = localStorage.getItem("vai_tro");
+            const id_nguoi_dung = localStorage.getItem("id_nguoi_dung"); // 🔹 lấy id_nguoi_dung từ localStorage
+            // Load avatar từ localStorage
+            const savedAvatar = localStorage.getItem("avatar");
+            if (savedAvatar) {
+                document.getElementById("voiceAvatar").src = savedAvatar;
+            }
 
-        showStatus(text) {
-            this.statusText.innerHTML = text;
-            this.statusText.classList.add('show');
-        }
 
-        hideStatus() {
-            this.statusText.classList.remove('show');
-        }
-    }
+            if (!id_nguoi_dung) {
+                alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
+                window.location.href = "/"; // quay về trang login
+                return;
+            }
 
-    // Initialize the voice assistant
-    document.addEventListener('DOMContentLoaded', () => {
-        new VoiceAssistant();
-        
-        // Check login status
-        const username = localStorage.getItem("username");
-        const role = localStorage.getItem("role");
-        const id_user = localStorage.getItem("id_user"); // 🔹 lấy id_user từ localStorage
+            // Nếu đã login, hiển thị username
+            document.getElementById("usernameDisplay").textContent = username;
+        });
 
-        if (!username) {
-            alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
-            window.location.href = "/"; // quay về trang login
-            return;
-        }
+        // Xử lý home button
+        document.getElementById("homeBtn").addEventListener("click", () => {
+            window.location.href = "/home";
+        });
 
-        // Nếu đã login, hiển thị username
-        document.getElementById("usernameDisplay").textContent = username;
-    });
+        // Xử lý logout
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            localStorage.clear();
+            window.location.href = "/";
+        });
+    </script>
 
-    // Xử lý home button
-    document.getElementById("homeBtn").addEventListener("click", () => {
-        window.location.href = "/home";
-    });
+    <script>
+        (function() {
+            function c() {
+                var b = a.contentDocument || a.contentWindow.document;
+                if (b) {
+                    var d = b.createElement('script');
+                    d.innerHTML = "window.__CF$cv$params={r:'984bc835a46f050b',t:'MTc1ODgxNjUyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
+                    b.getElementsByTagName('head')[0].appendChild(d)
+                }
+            }
+            if (document.body) {
+                var a = document.createElement('iframe');
+                a.height = 1;
+                a.width = 1;
+                a.style.position = 'absolute';
+                a.style.top = 0;
+                a.style.left = 0;
+                a.style.border = 'none';
+                a.style.visibility = 'hidden';
+                document.body.appendChild(a);
+                if ('loading' !== document.readyState) c();
+                else if (window.addEventListener) document.addEventListener('DOMContentLoaded', c);
+                else {
+                    var e = document.onreadystatechange || function() {};
+                    document.onreadystatechange = function(b) {
+                        e(b);
+                        'loading' !== document.readyState && (document.onreadystatechange = e, c())
+                    }
+                }
+            }
+        })();
+    </script>
+</body>
 
-    // Xử lý logout
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.clear();
-        window.location.href = "/";
-    });
-</script>
-
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984bc835a46f050b',t:'MTc1ODgxNjUyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

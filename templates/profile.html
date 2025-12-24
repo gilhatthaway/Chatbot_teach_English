@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trang cá nhân - AI Learning Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-hover {
+            transition: all 0.3s;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg text-white flex flex-col">
+
+    <!-- Header -->
+    <div class="p-6 flex justify-between items-center">
+        <h2 class="text-2xl font-bold">Trang cá nhân</h2>
+        <button onclick="window.location.href='/home'" class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white shadow">
+            ← Quay lại trang chủ
+        </button>
+    </div>
+
+    <!-- Profile Container -->
+    <div class="flex-grow flex justify-center items-center px-4">
+        <div class="bg-white text-gray-800 w-full max-w-2xl rounded-2xl p-8 shadow-xl fade-in">
+
+            <!-- Avatar -->
+            <div class="flex flex-col items-center mb-6">
+                <div class="w-28 h-28 rounded-full overflow-hidden border-4 border-blue-400 shadow-lg mb-3">
+                    <img id="profileAvatar" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="avatar" class="w-full h-full object-cover">
+                </div>
+
+                <!-- Dòng chữ thay đổi ảnh -->
+                <p class="text-blue-600 text-sm font-medium cursor-pointer hover:underline" onclick="document.getElementById('avatarInput').click()">
+                    Thay đổi ảnh đại diện
+                </p>
+
+                <input type="file" id="avatarInput" accept="image/*" class="hidden">
+
+                <!-- USER INFO -->
+                <h2 class="text-2xl font-bold mt-3" id="profileUsername">User Name</h2>
+                <p class="text-gray-600" id="profileEmail">example@gmail.com</p>
+            </div>
+
+            <hr class="my-6">
+
+            <!-- Options -->
+            <div class="grid gap-4">
+
+                <!-- Đổi mật khẩu -->
+                <div class="card-hover p-4 bg-blue-50 rounded-xl cursor-pointer" onclick="window.location.href='/change_password'">
+                    <h3 class="font-semibold text-blue-700">🔑 Đổi mật khẩu</h3>
+                    <p class="text-gray-600 text-sm">Cập nhật mật khẩu tài khoản của bạn</p>
+                </div>
+                <!-- Lịch sử bài học -->
+                <div class="card-hover p-4 bg-blue-50 rounded-xl cursor-pointer" onclick="window.location.href='/history_page'">
+                    <h3 class="font-semibold text-blue-700">📚 Lịch sử bài học</h3>
+                    <p class="text-gray-600 text-sm">Xem lại các bài học AI đã tạo</p>
+                </div>
+
+                <!-- Đăng xuất -->
+                <div class="card-hover p-4 bg-red-50 rounded-xl cursor-pointer" onclick="logout()">
+                    <h3 class="font-semibold text-red-600">🚪 Đăng xuất</h3>
+                    <p class="text-gray-600 text-sm">Thoát khỏi tài khoản</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load thông tin người dùng
+        document.addEventListener("DOMContentLoaded", () => {
+            const ten_dang_nhap = localStorage.getItem("ten_dang_nhap") || "Không xác định";
+            const email = localStorage.getItem("email") || "Không có email";
+
+            document.getElementById("profileUsername").textContent = ten_dang_nhap;
+            document.getElementById("profileEmail").textContent = email;
+        });
+
+        function logout() {
+            if (confirm("Bạn có chắc muốn đăng xuất?")) {
+                localStorage.clear();
+                window.location.href = "/";
+            }
+        }
+        // Load avatar khi vào trang
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedAvatar = localStorage.getItem("avatar");
+            if (savedAvatar) {
+                document.getElementById("profileAvatar").src = savedAvatar;
+            }
+
+            const ten_dang_nhap = localStorage.getItem("ten_dang_nhap") || "Không xác định";
+            const email = localStorage.getItem("email") || "Không có email";
+
+            document.getElementById("profileUsername").textContent = ten_dang_nhap;
+            document.getElementById("profileEmail").textContent = email;
+        });
+
+        // Xử lý đổi ảnh đại diện
+        document.getElementById("avatarInput").addEventListener("change", function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgSrc = e.target.result;
+
+                // Hiển thị xem trước
+                document.getElementById("profileAvatar").src = imgSrc;
+
+                // Lưu vào localStorage
+                localStorage.setItem("avatar", imgSrc);
+            };
+
+            reader.readAsDataURL(file);
+        });
+        // Load avatar khi vào trang
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedAvatar = localStorage.getItem("avatar");
+            if (savedAvatar) {
+                document.getElementById("profileAvatar").src = savedAvatar;
+            }
+        });
+
+        // Khi người dùng chọn ảnh mới
+        document.getElementById("avatarInput").addEventListener("change", function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgSrc = e.target.result;
+
+                // Hiển thị avatar mới
+                document.getElementById("profileAvatar").src = imgSrc;
+
+                // Lưu để lần sau vào vẫn còn
+                localStorage.setItem("avatar", imgSrc);
+            };
+
+            reader.readAsDataURL(file);
+        });
+    </script>
+
+</body>
+
+</html>

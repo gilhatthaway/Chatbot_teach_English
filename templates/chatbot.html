@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,49 +8,129 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        * { font-family: 'Inter', sans-serif; }
-
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
         .gradient-bg {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
         }
-
+        
         .chat-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .message-animation { animation: slideInUp 0.3s ease-out; }
-        .typing-animation { animation: pulse 1.5s infinite; }
-        .send-button:hover { transform: scale(1.05); transition: all 0.2s ease; }
-
-        .floating-particles { position: absolute; width: 100%; height: 100%; overflow: hidden; z-index: 0; }
+        
+        .message-animation {
+            animation: slideInUp 0.3s ease-out;
+        }
+        
+        .typing-animation {
+            animation: pulse 1.5s infinite;
+        }
+        
+        .send-button:hover {
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+        
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
         .particle {
             position: absolute;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             animation: float 6s infinite linear;
         }
-
-        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
-        @keyframes float { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10%,90% { opacity: 1; } 100% { transform: translateY(-100px) rotate(360deg); opacity: 0; } }
-
-        .message-bubble { max-width: 80%; word-wrap: break-word; }
-
-        .user-message { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; }
-        .bot-message { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; }
-        .bot-message-english { background: #fef3c7; color: #78350f; border: 1px solid #fde68a; }
-        .bot-message-vietnamese { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
-        .bot-message-correction { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
-
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10%,
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .message-bubble {
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+        }
+        
+        .bot-message {
+            background: #f3f4f6;
+            color: #111827;
+            border: 1px solid #d1d5db;
+        }
+        
+        .bot-message-english {
+            background: #fef3c7;
+            color: #78350f;
+            border: 1px solid #fde68a;
+        }
+        
+        .bot-message-vietnamese {
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
+        }
+        
+        .bot-message-correction {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        
         .input-focus:focus {
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
             border-color: #0ea5e9;
         }
+        
+        .message-bubble p {
+            white-space: pre-wrap;
+        }
     </style>
 </head>
+
 <body class="gradient-bg min-h-screen relative">
 
     <!-- Floating Particles Background -->
@@ -89,9 +170,15 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <span class="text-sm font-medium">👤 <span id="usernameDisplay">User</span></span>
-                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm shadow-md transition">Đăng xuất</button>
+                    <img id="chatAvatar" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow" alt="avatar">
+
+                    <span class="text-sm font-medium text-white" id="usernameDisplay">User</span>
+
+                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm shadow-md transition">
+        Đăng xuất
+    </button>
                 </div>
+
             </div>
 
             <!-- Chat Messages -->
@@ -121,13 +208,7 @@
             <!-- Input Area -->
             <div class="p-4 bg-white border-t border-gray-200">
                 <form id="chatForm" class="flex space-x-3">
-                    <input 
-                        type="text" 
-                        id="messageInput" 
-                        placeholder="Nhập tin nhắn của bạn..." 
-                        class="flex-1 p-3 border border-gray-300 rounded-xl input-focus transition-all duration-200 outline-none"
-                        autocomplete="off"
-                    >
+                    <input type="text" id="messageInput" placeholder="Nhập tin nhắn của bạn..." class="flex-1 p-3 border border-gray-300 rounded-xl input-focus transition-all duration-200 outline-none" autocomplete="off">
                     <button type="submit" class="send-button bg-gradient-to-r from-sky-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-200 flex items-center space-x-2">
                         <span>Gửi</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,109 +225,134 @@
         </div>
     </div>
 
-<script>
-    const chatMessages = document.getElementById('chatMessages');
-    const messageInput = document.getElementById('messageInput');
-    const chatForm = document.getElementById('chatForm');
-    const typingIndicator = document.getElementById('typingIndicator');
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const chatForm = document.getElementById('chatForm');
+        const typingIndicator = document.getElementById('typingIndicator');
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const username = localStorage.getItem("username");
-        const id_user = localStorage.getItem("id_user");
-        const role = localStorage.getItem("role") || "Người dùng";
+        document.addEventListener("DOMContentLoaded", () => {
+            const username = localStorage.getItem("ten_dang_nhap");
+            const id_nguoi_dung = localStorage.getItem("id_nguoi_dung");
+            const role = localStorage.getItem("role") || "Người dùng";
 
-        if (!username || !id_user) {
-            alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
-            window.location.href = "/"; 
-            return;
+            if (!username || !id_nguoi_dung) {
+                alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
+                window.location.href = "/login";
+                return;
+            }
+
+            // Nếu đã login, hiển thị username
+            document.getElementById("usernameDisplay").textContent = username;
+            // Load avatar từ localStorage
+            const savedAvatar = localStorage.getItem("avatar");
+            if (savedAvatar) {
+                document.getElementById("chatAvatar").src = savedAvatar;
+            }
+
+        });
+
+        // Xử lý logout
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+            localStorage.clear(); // Xoá hết username, role, id_nguoi_dung
+            window.location.href = "/login";
+        });
+
+        // Hàm thêm tin nhắn
+        function addMessage(message, isUser = false, customClass = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-3 message-animation ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
+
+            // 🔥 Load avatar từ localStorage (nếu có)
+            const userAvatar = localStorage.getItem("avatar") ||
+                "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+
+            // Tạo avatar (img cho user, emoji cho AI)
+            let avatar;
+
+            if (isUser) {
+                // Avatar user
+                avatar = document.createElement('img');
+                avatar.src = userAvatar;
+                avatar.className = "w-8 h-8 rounded-full object-cover border flex-shrink-0";
+            } else {
+                avatar = document.createElement('div');
+                avatar.className =
+                    "w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xl";
+                avatar.textContent = "🤖";
+            }
+
+
+            const messageBubble = document.createElement('div');
+            let bubbleClass = isUser ? 'user-message' : 'bot-message';
+            if (customClass) bubbleClass = customClass;
+            messageBubble.className = `message-bubble ${bubbleClass} p-3 rounded-2xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'} shadow-sm`;
+            messageBubble.innerHTML = `<p>${message}</p>`;
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageBubble);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Nếu đã login, hiển thị username
-        document.getElementById("usernameDisplay").textContent = username;
-    });
-
-    // Xử lý logout
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-        localStorage.clear();  // Xoá hết username, role, id_user
-        window.location.href = "/";
-    });
-
-    // Hàm thêm tin nhắn
-    function addMessage(message, isUser = false, customClass = null) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `flex items-start space-x-3 message-animation ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
-
-        const avatar = document.createElement('div');
-        avatar.className = `w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isUser ? 'bg-sky-500' : 'bg-gray-400'}`;
-        avatar.innerHTML = `<span class="text-white text-sm">${isUser ? '👤' : '🤖'}</span>`;
-
-        const messageBubble = document.createElement('div');
-        let bubbleClass = isUser ? 'user-message' : 'bot-message';
-        if (customClass) bubbleClass = customClass;
-        messageBubble.className = `message-bubble ${bubbleClass} p-3 rounded-2xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'} shadow-sm`;
-        messageBubble.innerHTML = `<p>${message}</p>`;
-
-        messageDiv.appendChild(avatar);
-        messageDiv.appendChild(messageBubble);
-
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function showTypingIndicator() {
-        typingIndicator.classList.remove('hidden');
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function hideTypingIndicator() {
-        typingIndicator.classList.add('hidden');
-    }
-
-    // Gửi tin nhắn
-    chatForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const message = messageInput.value.trim();
-        if (!message) return;
-
-        addMessage(message, true);
-        messageInput.value = '';
-        showTypingIndicator();
-
-        const id_user = localStorage.getItem("id_user"); // ✅ lấy từ localStorage
-        if (!id_user) {
-            hideTypingIndicator();
-            addMessage("❌ Không tìm thấy ID User. Vui lòng đăng nhập lại.");
-            return;
+        function showTypingIndicator() {
+            typingIndicator.classList.remove('hidden');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        try {
-            const response = await fetch('http://localhost:5000/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    message, 
-                    id_user: parseInt(id_user) // ✅ ép kiểu int để backend nhận chuẩn
-                })
-            });
-
-            const data = await response.json();
-            hideTypingIndicator();
-
-            if (data.response_english) addMessage(data.response_english, false, 'bot-message-english');
-            if (data.explanation_vietnamese) addMessage(data.explanation_vietnamese, false, 'bot-message-vietnamese');
-            if (data.correction) addMessage("✅ Correction: " + data.correction, false, 'bot-message-correction');
-
-        } catch (err) {
-            hideTypingIndicator();
-            addMessage("❌ Lỗi khi kết nối chatbot: " + err.message);
+        function hideTypingIndicator() {
+            typingIndicator.classList.add('hidden');
         }
-    });
 
-    // Enter để gửi tin nhắn
-    messageInput.focus();
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') chatForm.dispatchEvent(new Event('submit'));
-    });
-</script>
+        // Gửi tin nhắn
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+            showTypingIndicator();
+
+            const id_nguoi_dung = localStorage.getItem("id_nguoi_dung"); // ✅ lấy từ localStorage
+            if (!id_nguoi_dung) {
+                hideTypingIndicator();
+                addMessage("❌ Không tìm thấy ID User. Vui lòng đăng nhập lại.");
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message,
+                        id_nguoi_dung: parseInt(id_nguoi_dung) // ✅ ép kiểu int để backend nhận chuẩn
+                    })
+                });
+
+                const data = await response.json();
+                hideTypingIndicator();
+
+                if (data.response_english) addMessage(data.response_english, false, 'bot-message-english');
+                if (data.explanation_vietnamese) addMessage(data.explanation_vietnamese, false, 'bot-message-vietnamese');
+                if (data.correction) addMessage("✅ Correction: " + data.correction, false, 'bot-message-correction');
+
+            } catch (err) {
+                hideTypingIndicator();
+                addMessage("❌ Lỗi khi kết nối chatbot: " + err.message);
+            }
+        });
+
+        // Enter để gửi tin nhắn
+        messageInput.focus();
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') chatForm.dispatchEvent(new Event('submit'));
+        });
+    </script>
 </body>
+
 </html>

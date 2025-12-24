@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChatView from './ChatView';
 import GenerateLessonView from './GenerateLessonView';
+import ExamTakeView from './ExamTakeView';
 import { loginUser, registerUser } from './api';
 
 
@@ -128,8 +129,99 @@ const LoginView = ({ onLoginSuccess }) => {
   );
 };
 
-// --- 3. COMPONENT MÀN HÌNH HOME ---
-const HomeView = ({ onLogout, onNavigateChat, onNavigateGenerateLesson, userName = "User" }) => {
+// --- 3. COMPONENT MÀN HÌNH LỊCH SỬ LÀM BÀI ---
+const HistoryView = ({ onBack, onLogout, userId }) => {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  React.useEffect(() => {
+    loadHistory();
+  }, []);
+
+  const loadHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const { getExamHistory } = await import('./api');
+      const data = await getExamHistory(userId, 10);
+      setHistory(data || []);
+    } catch (err) {
+      setError('Không thể tải lịch sử làm bài');
+      console.error('Error loading history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogoutPress = () => {
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
+      { text: "Hủy", style: "cancel" },
+      { text: "Đồng ý", onPress: onLogout }
+    ]);
+  };
+
+  const HistoryCard = ({ item }) => {
+    const date = new Date(item.ngay_lam);
+    const formattedDate = date.toLocaleDateString('vi-VN');
+    const formattedTime = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    
+    return (
+      <View style={styles.historyCard}>
+        <View style={styles.historyCardHeader}>
+          <Text style={styles.historyTitle} numberOfLines={2}>{item.tieu_de}</Text>
+          <Text style={styles.historyScore}>{item.diem.toFixed(2)}/10</Text>
+        </View>
+        <View style={styles.historyCardContent}>
+          <Text style={styles.historyDetail}>✅ Đúng: {item.so_cau_dung}/{item.tong_cau}</Text>
+          <Text style={styles.historyDetail}>📅 {formattedDate} {formattedTime}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.historyContainer}>
+      <View style={styles.historyHeader}>
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.backButton}>← Quay lại</Text>
+        </TouchableOpacity>
+        <Text style={styles.historyHeaderTitle}>Lịch Sử Làm Bài</Text>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogoutPress}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#00a8ff" />
+          <Text style={styles.loadingText}>Đang tải lịch sử...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadHistory}>
+            <Text style={styles.retryBtnText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : history.length === 0 ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyText}>📭 Bạn chưa làm bài kiểm tra nào</Text>
+          <Text style={styles.emptySubText}>Hãy làm bài kiểm tra để xem kết quả tại đây!</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.historyListContent} showsVerticalScrollIndicator={false}>
+          {history.map((item, index) => (
+            <HistoryCard key={index} item={item} />
+          ))}
+        </ScrollView>
+      )}
+    </SafeAreaView>
+  );
+};
+
+// --- 4. COMPONENT MÀN HÌNH HOME ---
+const HomeView = ({ onLogout, onNavigateChat, onNavigateGenerateLesson, onNavigateExamTake, onNavigateHistory, userName = "User" }) => {
   const handleLogoutPress = () => {
     Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
       { text: "Hủy", style: "cancel" },
@@ -166,7 +258,18 @@ const HomeView = ({ onLogout, onNavigateChat, onNavigateGenerateLesson, userName
             description="Tạo bài tập tiếng Anh từ AI" 
             onPress={onNavigateGenerateLesson} 
           />
-          <FeatureCard icon="🎤" title="Trợ lý giọng nói AI" description="Nói chuyện và luyện phát âm với AI" />
+          <FeatureCard 
+            icon="✅" 
+            title="Làm Bài Kiểm Tra" 
+            description="Kiểm tra kiến thức tiếng Anh" 
+            onPress={onNavigateExamTake} 
+          />
+          <FeatureCard 
+            icon="📋" 
+            title="Lịch Sử Làm Bài" 
+            description="Xem lịch sử và kết quả các bài kiểm tra" 
+            onPress={onNavigateHistory} 
+          />
           <FeatureCard 
             icon="💬" 
             title="Chatbot với AI" 
@@ -182,9 +285,9 @@ const HomeView = ({ onLogout, onNavigateChat, onNavigateGenerateLesson, userName
   );
 };
 
-// --- 4. MAIN APP (Quản lý điều hướng các màn hình) ---
+// --- 5. MAIN APP (Quản lý điều hướng các màn hình) ---
 const MainApp = () => {
-  // state: 'login' | 'home' | 'chat' | 'lessonStats' | 'generateLesson'
+  // state: 'login' | 'home' | 'chat' | 'generateLesson' | 'examTake' | 'history'
   const [currentScreen, setCurrentScreen] = useState('login');
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState('User');
@@ -212,12 +315,23 @@ const MainApp = () => {
   if (currentScreen === 'generateLesson') {
     return <GenerateLessonView onBack={() => setCurrentScreen('home')} onLogout={handleLogout} userId={userId} />;
   }
+
+  if (currentScreen === 'examTake') {
+    return <ExamTakeView onBack={() => setCurrentScreen('home')} userId={userId} />;
+  }
+
+  if (currentScreen === 'history') {
+    return <HistoryView onBack={() => setCurrentScreen('home')} onLogout={handleLogout} userId={userId} />;
+  }
+
   // Mặc định là màn hình Home
   return (
     <HomeView 
       onLogout={handleLogout} 
       onNavigateChat={() => setCurrentScreen('chat')}
       onNavigateGenerateLesson={() => setCurrentScreen('generateLesson')}
+      onNavigateExamTake={() => setCurrentScreen('examTake')}
+      onNavigateHistory={() => setCurrentScreen('history')}
       userName={userName}
     />
   );
@@ -246,6 +360,26 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: '#00a8ff', borderRadius: 8, height: 50, justifyContent: 'center', alignItems: 'center' },
   submitBtnDisabled: { opacity: 0.5, backgroundColor: '#66c2ff' },
   submitBtnText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+
+  // === Style HISTORY ===
+  historyContainer: { flex: 1, backgroundColor: '#f5f7fa' },
+  historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#00a8ff', elevation: 5 },
+  backButton: { color: 'white', fontSize: 16, fontWeight: 'bold', marginRight: 10 },
+  historyHeaderTitle: { color: 'white', fontSize: 20, fontWeight: '700', flex: 1, textAlign: 'center' },
+  historyListContent: { paddingHorizontal: 15, paddingVertical: 15, gap: 12 },
+  historyCard: { backgroundColor: 'white', borderRadius: 15, padding: 15, elevation: 3, marginBottom: 5, borderLeftWidth: 4, borderLeftColor: '#00a8ff' },
+  historyCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  historyTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#2f3542', marginRight: 10 },
+  historyScore: { fontSize: 18, fontWeight: '700', color: '#00a8ff', paddingHorizontal: 12, paddingVertical: 4, backgroundColor: '#e3f2fd', borderRadius: 8 },
+  historyCardContent: { gap: 6 },
+  historyDetail: { fontSize: 13, color: '#747d8c', lineHeight: 18 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  loadingText: { color: '#666', fontSize: 14, marginTop: 10 },
+  errorText: { color: '#ff4757', fontSize: 16, textAlign: 'center', marginBottom: 15 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#2f3542', textAlign: 'center', marginBottom: 8 },
+  emptySubText: { fontSize: 14, color: '#747d8c', textAlign: 'center' },
+  retryBtn: { backgroundColor: '#00a8ff', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, marginTop: 15 },
+  retryBtnText: { color: 'white', fontWeight: 'bold' },
 
   // === Style HOME ===
   homeContainer: { flex: 1, backgroundColor: '#00a8ff' },

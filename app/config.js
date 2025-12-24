@@ -14,7 +14,7 @@ export const CONFIG = {
   // ✅ URL của backend Flask
   // - Localhost: 'http://localhost:5000'
   // - Network: 'http://192.168.1.14:5000' (thay IP thành của bạn)
-  BASE_URL: 'http://192.168.1.14:5000',
+  BASE_URL: 'http://172.31.99.114:5000/',
   
   // ⏱️ Timeout cho API calls (millisecond)
   API_TIMEOUT: 10000,

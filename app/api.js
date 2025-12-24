@@ -169,10 +169,140 @@ export const generateLesson = async (id_nguoi_dung, topic) => {
   }
 };
 
+/**
+ * GET EXAMS LIST API - Lấy danh sách bài kiểm tra
+ * @returns {Promise} - Danh sách bài kiểm tra
+ */
+export const getExamsList = async () => {
+  try {
+    logDebug('getExamsList', {});
+    
+    const response = await fetch(`${BASE_URL}/api/exams`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    logDebug('getExamsList response', data);
+    return data?.exams || data || [];
+  } catch (error) {
+    console.error('❌ Lỗi khi lấy danh sách bài kiểm tra:', error);
+    throw error;
+  }
+};
+
+/**
+ * GET EXAM DETAIL API - Lấy chi tiết bài kiểm tra
+ * @param {number} id_kt - ID bài kiểm tra
+ * @returns {Promise} - Chi tiết bài kiểm tra kèm câu hỏi
+ */
+export const getExamDetail = async (id_kt) => {
+  try {
+    logDebug('getExamDetail', { id_kt });
+    
+    const response = await fetch(`${BASE_URL}/exams/${id_kt}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    logDebug('getExamDetail response', data);
+    return data?.exam || data;
+  } catch (error) {
+    console.error('❌ Lỗi khi lấy chi tiết bài kiểm tra:', error);
+    throw error;
+  }
+};
+
+/**
+ * SUBMIT EXAM API - Nộp bài kiểm tra
+ * @param {number} id_nguoi_dung - ID người dùng
+ * @param {number} id_kt - ID bài kiểm tra
+ * @param {array} bai_lam - Danh sách câu trả lời
+ * @returns {Promise} - Kết quả chấm điểm
+ */
+export const submitExam = async (id_nguoi_dung, id_kt, bai_lam) => {
+  try {
+    logDebug('submitExam', { id_nguoi_dung, id_kt });
+    
+    const response = await fetch(`${BASE_URL}/exam/submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id_nguoi_dung: id_nguoi_dung,
+        id_kt: id_kt,
+        bai_lam: bai_lam,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    logDebug('submitExam response', data);
+    return data;
+  } catch (error) {
+    console.error('❌ Lỗi khi nộp bài kiểm tra:', error);
+    throw error;
+  }
+};
+
+/**
+ * GET EXAM HISTORY API - Lấy lịch sử làm bài kiểm tra của user
+ * @param {number} id_nguoi_dung - ID người dùng
+ * @param {number} limit - Số lượng bài cần lấy (mặc định 10)
+ * @returns {Promise} - Danh sách lịch sử làm bài
+ */
+export const getExamHistory = async (id_nguoi_dung, limit = 10) => {
+  try {
+    logDebug('getExamHistory', { id_nguoi_dung, limit });
+    
+    const response = await fetch(
+      `${BASE_URL}/exam/history/${id_nguoi_dung}?limit=${limit}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    logDebug('getExamHistory response', data);
+    return data?.data || [];
+  } catch (error) {
+    console.error('❌ Lỗi khi lấy lịch sử làm bài:', error);
+    throw error;
+  }
+};
+
 export default {
   sendChatMessage,
   loginUser,
   registerUser,
   getChatHistory,
   generateLesson,
+  getExamsList,
+  getExamDetail,
+  submitExam,
+  getExamHistory,
 };

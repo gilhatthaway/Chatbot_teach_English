@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tạo & Quản lý bài kiểm tra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-50 to-indigo-50 min-h-screen text-slate-800">
+    <header class="bg-white/80 backdrop-blur shadow-sm sticky top-0 z-10 border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">AI</div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Admin Dashboard</p>
+                    <p class="font-semibold text-slate-900">Quản lý bài kiểm tra</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <span class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 flex items-center gap-2">
+          <span class="text-lg">👤</span>
+                <span id="usernameDisplay" class="font-semibold">Trương Việt Hoàng</span>
+                </span>
+                <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition text-sm">Đăng xuất</button>
+            </div>
+        </div>
+
+        <div class="border-t border-slate-100">
+            <div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3 text-sm text-slate-600 overflow-x-auto">
+                <a href="/ad_user" class="px-3 py-2 rounded-lg hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <span class="text-slate-500">👥</span> <span>Users</span>
+                </a>
+                <a href="/ad_lesson" class="px-3 py-2 rounded-lg hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <span class="text-slate-500">📚</span> <span>Lessons</span>
+                </a>
+                <a href="/ad_query" class="px-3 py-2 rounded-lg hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <span class="text-slate-500">🔍</span> <span>Query</span>
+                </a>
+                <a href="/exam/create" class="px-3 py-2 rounded-lg bg-indigo-600 text-white inline-flex items-center gap-2 shadow-sm">
+                    <span>📝</span> <span>Exam</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-4">
+                <div class="space-y-1">
+                    <p class="text-sm text-indigo-600 font-semibold">Trình tạo bài kiểm tra</p>
+                    <h1 class="text-3xl font-bold text-slate-900">Thiết kế & xuất bản đề thi</h1>
+                    <p class="text-slate-500">Thêm câu hỏi, cấu hình mức độ và quản lý danh sách đề đã tạo.</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-3 text-sm text-slate-600">
+                <span class="px-3 py-2 rounded-lg bg-slate-100">Nhanh chóng thêm câu hỏi</span>
+                <span class="px-3 py-2 rounded-lg bg-slate-100">Lưu & chỉnh sửa linh hoạt</span>
+                <span class="px-3 py-2 rounded-lg bg-slate-100">Giao diện trực quan</span>
+            </div>
+        </div>
+
+        <!-- FORM TẠO / SỬA -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-blue-600 font-semibold">Thông tin bài kiểm tra</p>
+                    <h2 class="text-xl font-bold">Tạo / Sửa bài</h2>
+                    <p id="editingHint" class="text-xs text-slate-500 mt-1"></p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <input id="examTitle" placeholder="Tiêu đề bài kiểm tra" class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input id="examDescription" placeholder="Mô tả" class="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div id="questionBuilder" class="space-y-4"></div>
+            <div class="flex justify-center pt-4">
+                <button id="addQuestionBtn" class="px-5 py-2 bg-indigo-600 text-white rounded-xl text-sm shadow hover:bg-indigo-700 transition">
+    + Thêm câu hỏi
+  </button>
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <p id="createStatus" class="text-sm text-slate-500"></p>
+                <div class="flex gap-2">
+                    <button id="cancelEditBtn" class="px-4 py-2 bg-slate-200 rounded-lg hidden hover:bg-slate-300 transition">
+            Hủy sửa
+          </button>
+                    <button id="createExamBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-lg shadow-sm hover:bg-emerald-700 transition">
+            Lưu bài kiểm tra
+          </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- DANH SÁCH BÀI KIỂM TRA -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <div>
+                <p class="text-sm text-purple-600 font-semibold">Danh sách bài kiểm tra</p>
+                <h2 class="text-xl font-bold">Đã tạo</h2>
+            </div>
+
+            <p id="listStatus" class="text-sm text-slate-500"></p>
+            <div id="examList" class="space-y-3"></div>
+        </section>
+    </main>
+
+    <script>
+        const API = {
+            CREATE: "/create/exams", // POST
+            UPDATE: (id) => `/update/exams/${id}`, // PUT
+            DELETE: (id) => `/delete/exams/${id}`, // DELETE
+            LIST: "/exams/list", // GET
+            DETAIL: (id) => `/exams/${id}`,
+        };
+
+        /* ================= STATE ================= */
+        const builderState = {
+            questions: []
+        };
+        let editingExamId = null;
+
+        const ALLOWED_TYPES = ["trac_nghiem", "tu_luan"];
+        const ALLOWED_LEVELS = ["de", "trung_binh", "kho"];
+
+        function makeDefaultQuestion(type = "trac_nghiem") {
+            return {
+                noi_dung: "",
+                loai_cau_hoi: type,
+                muc_do: "de",
+                dap_an: type === "trac_nghiem" ? [{
+                    noi_dung: "",
+                    ketqua: true
+                }] : [{
+                    noi_dung: "",
+                    ketqua: true
+                }]
+            };
+        }
+
+        function normalizeQuestionFromApi(q) {
+            const type = (q.loai_cau_hoi || "trac_nghiem").toLowerCase();
+            const level = (q.muc_do || "de").toLowerCase();
+
+            const fixed = {
+                noi_dung: q.noi_dung || "",
+                loai_cau_hoi: ALLOWED_TYPES.includes(type) ? type : "trac_nghiem",
+                muc_do: ALLOWED_LEVELS.includes(level) ? level : "de",
+                dap_an: Array.isArray(q.dap_an) ?
+                    q.dap_an.map(a => ({
+                        noi_dung: a.noi_dung || "",
+                        ketqua: !!a.ketqua
+                    })) : []
+            };
+
+            if (fixed.loai_cau_hoi === "trac_nghiem") {
+                if (!fixed.dap_an.length) fixed.dap_an = [{
+                    noi_dung: "",
+                    ketqua: true
+                }];
+                const correctCount = fixed.dap_an.filter(a => a.ketqua).length;
+                if (correctCount !== 1) {
+                    fixed.dap_an = fixed.dap_an.map((a, idx) => ({...a,
+                        ketqua: idx === 0
+                    }));
+                }
+            } else {
+                if (!fixed.dap_an.length) fixed.dap_an = [{
+                    noi_dung: "",
+                    ketqua: true
+                }];
+                fixed.dap_an = [{
+                    noi_dung: fixed.dap_an[0] && fixed.dap_an[0].noi_dung ?
+                        fixed.dap_an[0].noi_dung : "",
+
+                    ketqua: true
+                }];
+            }
+            return fixed;
+        }
+
+        /* ================= AUTH ================= */
+        function ensureAuth() {
+            const name = localStorage.getItem("ten_dang_nhap");
+            if (!name) {
+                alert("Vui lòng đăng nhập");
+                location.href = "/login";
+                return;
+            }
+            document.getElementById("usernameDisplay").textContent = name;
+        }
+
+        /* ================= QUESTIONS UI ================= */
+        function renderQuestions() {
+            const el = document.getElementById("questionBuilder");
+            el.innerHTML = "";
+
+            if (!builderState.questions.length) {
+                el.innerHTML = `<p class="text-sm text-slate-500">Chưa có câu hỏi. Nhấn “+ Thêm câu hỏi”.</p>`;
+                return;
+            }
+
+            builderState.questions.forEach((q, i) => {
+                        const card = document.createElement("div");
+                        card.className = "border rounded-xl p-4 bg-slate-50 space-y-3";
+
+                        const answersHtml = (q.loai_cau_hoi === "trac_nghiem") ?
+                            `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-medium text-slate-700">Đáp án (chọn 1 đáp án đúng)</p>
+              <button class="add-ans text-indigo-600 text-sm" data-i="${i}">+ Thêm đáp án</button>
+            </div>
+
+            ${(q.dap_an || []).map((a, j) => `
+              <div class="flex items-center gap-2">
+                <input type="radio" name="correct-${i}" class="ans-correct h-4 w-4"
+                       ${a.ketqua ? "checked" : ""} data-i="${i}" data-j="${j}">
+                <input class="ans-text flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                       value="${(a.noi_dung || "")}" placeholder="Nhập đáp án" data-i="${i}" data-j="${j}">
+                <button class="remove-ans text-rose-500 text-sm" data-i="${i}" data-j="${j}">Xóa</button>
+              </div>
+            `).join("")}
+          </div>
+        `
+          :
+          `
+          <div class="space-y-2">
+            <p class="text-sm font-medium text-slate-700">Đáp án đúng (tự luận)</p>
+            <input class="essay-ans w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                   value="${((q.dap_an && q.dap_an[0] && q.dap_an[0].noi_dung) || "")}"
+                   placeholder="Nhập đáp án đúng" data-i="${i}">
+          </div>
+        `;
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 space-y-2">
+              <div>
+                <label class="text-sm font-medium text-slate-700">Câu ${i + 1}</label>
+                <textarea class="q-text w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          rows="2" placeholder="Nhập nội dung câu hỏi"
+                          data-i="${i}">${(q.noi_dung || "")}</textarea>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Loại câu hỏi</label>
+                  <select class="q-type w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-i="${i}">
+                    <option value="trac_nghiem" ${q.loai_cau_hoi === "trac_nghiem" ? "selected" : ""}>Trắc nghiệm</option>
+                    <option value="tu_luan" ${q.loai_cau_hoi === "tu_luan" ? "selected" : ""}>Tự luận</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="text-sm font-medium text-slate-700">Mức độ</label>
+                  <select class="q-level w-full border rounded-lg px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-indigo-500" data-i="${i}">
+                    <option value="de" ${q.muc_do === "de" ? "selected" : ""}>Dễ</option>
+                    <option value="trung_binh" ${q.muc_do === "trung_binh" ? "selected" : ""}>Trung bình</option>
+                    <option value="kho" ${q.muc_do === "kho" ? "selected" : ""}>Khó</option>
+                  </select>
+                </div>
+              </div>
+
+              ${answersHtml}
+            </div>
+
+            <button class="remove-q text-rose-500 text-sm" data-i="${i}">Xóa câu</button>
+          </div>
+        `;
+
+        el.appendChild(card);
+      });
+
+      // bind question content
+      el.querySelectorAll(".q-text").forEach(t => {
+        t.oninput = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          builderState.questions[i].noi_dung = e.target.value;
+        };
+      });
+
+      // bind type
+      el.querySelectorAll(".q-type").forEach(s => {
+        s.onchange = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          const type = e.target.value;
+          builderState.questions[i].loai_cau_hoi = type;
+          builderState.questions[i].dap_an = (type === "trac_nghiem")
+            ? [{ noi_dung: "", ketqua: true }]
+            : [{ noi_dung: "", ketqua: true }];
+          renderQuestions();
+        };
+      });
+
+      // bind level
+      el.querySelectorAll(".q-level").forEach(s => {
+        s.onchange = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          builderState.questions[i].muc_do = e.target.value;
+        };
+      });
+
+      // bind correct answer (trắc nghiệm)
+      el.querySelectorAll(".ans-correct").forEach(r => {
+        r.onchange = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          const j = parseInt(e.target.dataset.j, 10);
+          (builderState.questions[i].dap_an || []).forEach((a, idx) => a.ketqua = (idx === j));
+        };
+      });
+
+      // bind answer text
+      el.querySelectorAll(".ans-text").forEach(inp => {
+        inp.oninput = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          const j = parseInt(e.target.dataset.j, 10);
+          builderState.questions[i].dap_an[j].noi_dung = e.target.value;
+        };
+      });
+
+      // bind essay answer
+      el.querySelectorAll(".essay-ans").forEach(inp => {
+        inp.oninput = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          builderState.questions[i].dap_an = [{ noi_dung: e.target.value, ketqua: true }];
+        };
+      });
+
+      // remove answer
+      el.querySelectorAll(".remove-ans").forEach(btn => {
+        btn.onclick = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          const j = parseInt(e.target.dataset.j, 10);
+          const arr = builderState.questions[i].dap_an || [];
+          arr.splice(j, 1);
+          if (!arr.length) arr.push({ noi_dung: "", ketqua: true });
+          if (!arr.some(a => a.ketqua)) arr[0].ketqua = true;
+          renderQuestions();
+        };
+      });
+
+      // add answer
+      el.querySelectorAll(".add-ans").forEach(btn => {
+        btn.onclick = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          builderState.questions[i].dap_an = builderState.questions[i].dap_an || [];
+          builderState.questions[i].dap_an.push({ noi_dung: "", ketqua: false });
+          renderQuestions();
+        };
+      });
+
+      // remove question
+      el.querySelectorAll(".remove-q").forEach(btn => {
+        btn.onclick = (e) => {
+          const i = parseInt(e.target.dataset.i, 10);
+          builderState.questions.splice(i, 1);
+          renderQuestions();
+        };
+      });
+    }
+
+    function addQuestion() {
+      builderState.questions.push(makeDefaultQuestion("trac_nghiem"));
+      renderQuestions();
+    }
+
+    /* ================= CREATE ================= */
+    async function createExam() {
+      const createStatus = document.getElementById("createStatus");
+      const examTitle = document.getElementById("examTitle");
+      const examDescription = document.getElementById("examDescription");
+
+      const title = (examTitle.value || "").trim();
+      const desc = (examDescription.value || "").trim();
+
+      if (!title) {
+        createStatus.textContent = "❌ Thiếu tiêu đề bài kiểm tra";
+        return;
+      }
+
+      if (!builderState.questions.length) {
+        createStatus.textContent = "❌ Chưa có câu hỏi";
+        return;
+      }
+
+      for (const q of builderState.questions) {
+        if (q.loai_cau_hoi === "trac_nghiem") {
+          const correctCount = (q.dap_an || []).filter(a => a.ketqua).length;
+          if (correctCount !== 1) {
+            createStatus.textContent = "❌ Trắc nghiệm phải có đúng 1 đáp án đúng";
+            return;
+          }
+        }
+      }
+
+      const payload = {
+        tieu_de: title,
+        mo_ta: desc,
+        cau_hoi: builderState.questions.map(q => ({
+          noi_dung: q.noi_dung,
+          loai_cau_hoi: q.loai_cau_hoi,
+          muc_do: q.muc_do,
+          dap_an: q.dap_an
+        }))
+      };
+
+      createStatus.textContent = "⏳ Đang lưu bài kiểm tra...";
+
+      try {
+        const res = await fetch(API.CREATE, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const rawText = await res.text();
+        console.log("CREATE EXAM STATUS:", res.status);
+        console.log("CREATE EXAM RESPONSE:", rawText);
+
+        let data = {};
+        try { data = JSON.parse(rawText); } catch (e) { console.warn("⚠ Response không phải JSON"); }
+
+        if (!res.ok) {
+          createStatus.textContent = "❌ " + (data.message || data.error || "Không thể lưu bài kiểm tra");
+          return;
+        }
+
+        createStatus.textContent = "✅ Đã lưu bài kiểm tra";
+        await loadExamList();
+        resetForm();
+        scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e) {
+        createStatus.textContent = "❌ Lỗi khi lưu bài kiểm tra";
+      }
+    }
+
+    function resetForm() {
+      editingExamId = null;
+      builderState.questions = [];
+      examTitle.value = "";
+      examDescription.value = "";
+      renderQuestions();
+      addQuestion();
+    }
+
+    /* ================= LIST ================= */
+    async function loadExamList() {
+      const listStatus = document.getElementById("listStatus");
+      const examList = document.getElementById("examList");
+
+      listStatus.textContent = "Đang tải...";
+      examList.innerHTML = "";
+
+      try {
+        const res = await fetch(API.LIST);
+        const data = await res.json();
+        const exams = data.exams || [];
+
+        listStatus.textContent = `${exams.length} bài kiểm tra`;
+
+        exams.forEach(e => {
+          const row = document.createElement("div");
+          row.className = "border rounded-lg p-3 flex justify-between items-center bg-slate-50";
+          row.innerHTML = `
+            <div>
+              <b class="text-slate-900">${e.tieu_de}</b>
+              <p class="text-xs text-slate-500">${e.so_cau} câu · ${e.ngay_tao}</p>
+              ${e.mo_ta ? `<p class="text-xs text-slate-600 mt-1">${e.mo_ta}</p>` : ""}
+            </div>
+            <div class="flex gap-2">
+              <button class="edit bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-indigo-700">Sửa</button>
+              <button class="del bg-rose-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-rose-600">Xóa</button>
+            </div>
+          `;
+          examList.appendChild(row);
+
+          row.querySelector(".edit").onclick = async () => {
+            const createStatus = document.getElementById("createStatus");
+            createStatus.textContent = "⏳ Đang tải bài...";
+
+            const r = await fetch(API.DETAIL(e.id_kt));
+            const d = await r.json().catch(() => ({}));
+            const exam = d.exam || null;
+
+            if (!r.ok || !exam) {
+              createStatus.textContent = "❌ Không tải được bài";
+              return;
+            }
+
+            editingExamId = e.id_kt;
+            examTitle.value = exam.tieu_de || "";
+            examDescription.value = exam.mo_ta || "";
+            builderState.questions = (exam.cau_hoi || []).map(normalizeQuestionFromApi);
+
+            renderQuestions();
+            createStatus.textContent = "✅ Đã tải bài để sửa";
+            scrollTo({ top: 0, behavior: "smooth" });
+          };
+
+          row.querySelector(".del").onclick = async () => {
+            if (!confirm("Xóa bài kiểm tra?")) return;
+            await fetch(API.DELETE(e.id_kt), { method: "DELETE" });
+            loadExamList();
+          };
+        });
+      } catch (e) {
+        listStatus.textContent = "❌ Không thể tải danh sách";
+      }
+    }
+
+    /* ================= INIT ================= */
+    ensureAuth();
+    resetForm();
+    loadExamList();
+
+    addQuestionBtn.onclick = addQuestion;
+    createExamBtn.onclick = createExam;
+    logoutBtn.onclick = () => { localStorage.clear(); location.href = "/login"; };
+    </script>
+</body>
+
+</html>

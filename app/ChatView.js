@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, StyleSheet, 
-  Image, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator
+  Image, FlatList, KeyboardAvoidingView, Platform, Alert, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { sendChatMessage, getChatHistory } from './api';
@@ -12,7 +12,7 @@ const ChatView = ({ onBack, onLogout, userId = 1 }) => {
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
-  const scrollViewRef = useRef();
+  const flatListRef = useRef();
 
   // Load lịch sử chat khi component mount
   useEffect(() => {
@@ -109,80 +109,97 @@ const ChatView = ({ onBack, onLogout, userId = 1 }) => {
   };
 
   return (
-    <SafeAreaView style={styles.chatContainer}>
-      {/* Header Tổng */}
-      <View style={styles.chatMainHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>⬅ Trang chủ</Text>
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerEmoji}>🤖</Text>
-          <Text style={styles.headerTitle}>AI Chat Assistant</Text>
-          <Text style={styles.headerSubtitle}>Trò chuyện thông minh, trải nghiệm tuyệt vời</Text>
+    <KeyboardAvoidingView 
+      style={styles.chatContainer} 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
+      <SafeAreaView style={styles.safeAreaContainer}>
+        {/* Header Tổng */}
+        <View style={styles.chatMainHeader}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backButtonText}>⬅ Trang chủ</Text>
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerEmoji}>🤖</Text>
+            <Text style={styles.headerTitle}>AI Chat Assistant</Text>
+            <Text style={styles.headerSubtitle}>Trò chuyện thông minh, trải nghiệm tuyệt vời</Text>
+          </View>
+          <View style={{ width: 80 }} /> {/* Dummy view để cân giữa tiêu đề */}
         </View>
-        <View style={{ width: 80 }} /> {/* Dummy view để cân giữa tiêu đề */}
-      </View>
 
-      {/* Khung Chat Trắng */}
-      <View style={styles.whiteChatBox}>
-        {/* Header con bên trong (Thông tin AI & Admin) */}
-        <View style={styles.innerHeader}>
-          <View style={styles.botInfo}>
-            <Image 
-              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png' }} 
-              style={styles.smallBotAvatar} 
-            />
-            <View>
-              <Text style={styles.botName}>AI Teacher 😎</Text>
-              <Text style={styles.botStatus}>Đang hoạt động</Text>
+        {/* Khung Chat Trắng */}
+        <View style={styles.whiteChatBox}>
+          {/* Header con bên trong (Thông tin AI & Admin) */}
+          <View style={styles.innerHeader}>
+            <View style={styles.botInfo}>
+              <Image 
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png' }} 
+                style={styles.smallBotAvatar} 
+              />
+              <View>
+                <Text style={styles.botName}>AI Teacher 😎</Text>
+                <Text style={styles.botStatus}>Đang hoạt động</Text>
+              </View>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>👤 admin</Text>
+              <TouchableOpacity style={styles.miniLogoutBtn} onPress={onLogout}>
+                <Text style={styles.miniLogoutText}>Đăng xuất</Text>
+              </TouchableOpacity>
             </View>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>👤 admin</Text>
-            <TouchableOpacity style={styles.miniLogoutBtn} onPress={onLogout}>
-              <Text style={styles.miniLogoutText}>Đăng xuất</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        {/* Danh sách tin nhắn */}
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-          <ScrollView 
-            style={styles.messageArea}
-            ref={scrollViewRef}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          >
-            {messages.map((msg) => (
-              <View key={msg.id} style={[
+          {/* Danh sách tin nhắn - Dùng FlatList */}
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={[
                 styles.messageBubble, 
-                msg.sender === 'user' ? styles.userBubble : styles.botBubble
+                item.sender === 'user' ? styles.userBubble : styles.botBubble
               ]}>
-                {msg.sender === 'bot' && (
+                {item.sender === 'bot' && (
                    <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png' }} style={styles.msgAvatar} />
                 )}
-                <View style={[styles.bubbleTextWrapper, msg.sender === 'user' ? styles.userTextWrapper : styles.botTextWrapper]}>
-                  <Text style={styles.messageText}>{msg.text}</Text>
-                </View>
-              </View>
-            ))}
-            {loading && (
-              <View style={[styles.messageBubble, styles.botBubble]}>
-                <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png' }} style={styles.msgAvatar} />
-                <View style={[styles.bubbleTextWrapper, styles.botTextWrapper]}>
-                  <ActivityIndicator size="small" color="#0084ff" />
+                <View style={[styles.bubbleTextWrapper, item.sender === 'user' ? styles.userTextWrapper : styles.botTextWrapper]}>
+                  <Text style={styles.messageText}>{item.text}</Text>
                 </View>
               </View>
             )}
-          </ScrollView>
+            ListFooterComponent={
+              loading ? (
+                <View style={[styles.messageBubble, styles.botBubble]}>
+                  <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4712/4712035.png' }} style={styles.msgAvatar} />
+                  <View style={[styles.bubbleTextWrapper, styles.botTextWrapper]}>
+                    <ActivityIndicator size="small" color="#0084ff" />
+                  </View>
+                </View>
+              ) : null
+            }
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            onEndReachedThreshold={0.1}
+            style={styles.messageArea}
+            contentContainerStyle={styles.messageListContent}
+            scrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
+          />
+
+          {/* Footer chữ nhỏ */}
+          <Text style={styles.chatFooterText}>Trải nghiệm chatbot thông minh</Text>
 
           {/* Ô nhập liệu */}
           <View style={styles.inputArea}>
             <TextInput
               style={styles.chatInput}
               placeholder="Nhập tin nhắn của bạn..."
+              placeholderTextColor="#999"
               value={inputText}
               onChangeText={setInputText}
               editable={!loading}
+              maxLength={500}
+              multiline={true}
             />
             <TouchableOpacity 
               style={[styles.sendButton, loading && styles.sendButtonDisabled]} 
@@ -196,16 +213,15 @@ const ChatView = ({ onBack, onLogout, userId = 1 }) => {
               )}
             </TouchableOpacity>
           </View>
-          
-          <Text style={styles.chatFooterText}>Trải nghiệm chatbot thông minh</Text>
-        </KeyboardAvoidingView>
-      </View>
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   chatContainer: { flex: 1, backgroundColor: '#0085d6' },
+  safeAreaContainer: { flex: 1 },
   chatMainHeader: { alignItems: 'center', paddingVertical: 10, paddingHorizontal: 15, flexDirection: 'row', justifyContent: 'space-between' },
   backButton: { backgroundColor: '#0062cc', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
   backButtonText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
@@ -216,7 +232,8 @@ const styles = StyleSheet.create({
   
   whiteChatBox: { 
     flex: 1, backgroundColor: '#f0f2f5', margin: 15, borderRadius: 15, overflow: 'hidden',
-    shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 8 
+    shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 8,
+    flexDirection: 'column'
   },
   innerHeader: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
@@ -231,28 +248,31 @@ const styles = StyleSheet.create({
   miniLogoutBtn: { backgroundColor: '#ff5252', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 5 },
   miniLogoutText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
 
-  messageArea: { flex: 1, padding: 15 },
+  messageArea: { flex: 1 },
+  messageListContent: { paddingHorizontal: 15, paddingVertical: 15, paddingBottom: 10 },
   messageBubble: { maxWidth: '80%', padding: 12, borderRadius: 15, marginBottom: 15, flexDirection: 'row', alignItems: 'flex-end' },
   botBubble: { alignSelf: 'flex-start' },
   userBubble: { alignSelf: 'flex-end', flexDirection: 'row-reverse' },
   msgAvatar: { width: 30, height: 30, borderRadius: 15, marginRight: 8 },
-  bubbleTextWrapper: { borderRadius: 15, padding: 12 },
+  bubbleTextWrapper: { borderRadius: 15, padding: 12, maxWidth: '90%' },
   botTextWrapper: { backgroundColor: '#e4e6eb' },
   userTextWrapper: { backgroundColor: '#0084ff' },
   messageText: { fontSize: 14, color: '#333', lineHeight: 20 },
   
   inputArea: { 
     flexDirection: 'row', padding: 10, backgroundColor: 'white', 
-    borderTopWidth: 1, borderTopColor: '#ddd', alignItems: 'center' 
+    borderTopWidth: 1, borderTopColor: '#ddd', alignItems: 'flex-end',
+    minHeight: 55
   },
   chatInput: { 
-    flex: 1, height: 45, borderWidth: 1, borderColor: '#0084ff', 
-    borderRadius: 25, paddingHorizontal: 15, backgroundColor: 'white', marginRight: 10 
+    flex: 1, minHeight: 45, maxHeight: 100, borderWidth: 1, borderColor: '#0084ff', 
+    borderRadius: 25, paddingHorizontal: 15, paddingVertical: 10, backgroundColor: '#f9f9f9', marginRight: 10,
+    fontSize: 14
   },
-  sendButton: { backgroundColor: '#0084ff', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 25 },
+  sendButton: { backgroundColor: '#0084ff', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 25, justifyContent: 'center', alignItems: 'center', height: 45 },
   sendButtonDisabled: { opacity: 0.5, backgroundColor: '#99c9ff' },
   sendButtonText: { color: 'white', fontWeight: 'bold' },
-  chatFooterText: { textAlign: 'center', fontSize: 10, color: '#888', paddingBottom: 10, backgroundColor: 'white' },
+  chatFooterText: { textAlign: 'center', fontSize: 10, color: '#888', paddingVertical: 8, paddingHorizontal: 10, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#eee' },
 });
 
 export default ChatView;

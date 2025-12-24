@@ -1,214 +1,135 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Query</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #ffffff;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        /* Navigation Bar */
-        .navbar {
-            background: #343a40;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        .nav-links {
-            display: flex;
-            gap: 20px;
-        }
-        .nav-link {
-            color: #adb5bd;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        .nav-link:hover {
-            color: white;
-            background: rgba(255,255,255,0.1);
-        }
-        .nav-link.active {
-            color: white;
-            background: #007bff;
-        }
-
-        /* Header */
-        .header {
-            background: #f8f9fa;
-            padding: 20px;
-            border-bottom: 2px solid #e9ecef;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            color: #495057;
-            font-size: 2rem;
-        }
-
-        /* Query Container */
-        .query-container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-
-        .query-container input[type="text"] {
+        .result table {
             width: 100%;
-            padding: 10px 12px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .query-container button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-right: 10px;
-        }
-
-        .query-container button:hover {
-            background-color: #0056b3;
-        }
-
-        .result {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #fff;
-            min-height: 50px;
-            overflow-x: auto;
-        }
-
-        table {
             border-collapse: collapse;
-            width: 100%;
         }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+        
+        .result th,
+        .result td {
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            text-align: left;
         }
-
-        th {
-            background-color: #007bff;
-            color: white;
+        
+        .result th {
+            background: #f8fafc;
+            font-weight: 700;
         }
-
-        tr:nth-child(even) {background-color: #f2f2f2;}
-
-        @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-            .nav-links {
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-            .query-container {
-                margin: 20px 10px;
-            }
+        
+        .result h3 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 700;
         }
     </style>
 </head>
-<body>
 
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="nav-brand">
-            <span>🏠</span>
-            <span>Admin Panel</span>
+<body class="bg-gradient-to-br from-slate-50 to-indigo-50 min-h-screen text-slate-800">
+    <header class="bg-white/80 backdrop-blur shadow-sm sticky top-0 z-10 border-b border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">AI</div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Admin Dashboard</p>
+                    <p class="font-semibold text-slate-900">Quản lý Query</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <span class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 flex items-center gap-2">
+                    <span class="text-lg">👤</span>
+                <span id="usernameDisplay" class="font-semibold">Khách</span>
+                </span>
+                <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition text-sm">Đăng xuất</button>
+            </div>
         </div>
-        <div class="nav-links">
-            <a href="/ad_user" class="nav-link">👥 Users</a>
-            <a href="/ad_lesson" class="nav-link">📚 Lessons</a>
-            <a href="/ad_query" class="nav-link active">🔍 Query</a>
-        </div>
-    </nav>
+        <div class="border-t border-slate-100">
+            <div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3 text-sm text-slate-600 overflow-x-auto">
+                <a href="/ad_user" class="px-3 py-2 rounded-lg hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <span class="text-slate-500">👥</span> <span>Users</span>
+                </a>
+                <a href="/ad_lesson" class="px-3 py-2 rounded-lg hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <span class="text-slate-500">📚</span> <span>Lessons</span>
+                </a>
+                <a href="/ad_query" class="px-3 py-2 rounded-lg bg-indigo-600 text-white inline-flex items-center gap-2 shadow-sm">
+                    <span>🔍</span> <span>Query</span>
+                </a>
+                <a href="/exam/create" class="px-3 py-2 rounded-lg hover:bg-slate-100 transition inline-flex items-center gap-2">
+                    <span class="text-slate-500">📝</span> <span>Exam</span>
+                </a>
+            </div>
+    </header>
 
-    <div class="header">
-        <h1>🔧 Query Interface</h1>
-    </div>
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-4">
+                <div class="space-y-1">
+                    <p class="text-sm text-indigo-600 font-semibold">Quản trị cơ sở dữ liệu</p>
+                    <h1 class="text-3xl font-bold text-slate-900">Gửi lệnh truy vấn an toàn</h1>
+                    <p class="text-slate-500">Thực thi câu lệnh SQL và xem kết quả ngay trong bảng, hỗ trợ hiển thị toàn bộ database.</p>
+                </div>
+                <span class="px-3 py-2 rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold">Theo dõi tức thì</span>
+            </div>
+            <div class="flex flex-wrap gap-3 text-sm text-slate-600">
+                <span class="px-3 py-2 rounded-lg bg-slate-100">Chạy truy vấn nhanh</span>
+                <span class="px-3 py-2 rounded-lg bg-slate-100">Xem toàn bộ dữ liệu</span>
+                <span class="px-3 py-2 rounded-lg bg-slate-100">Kết quả định dạng đẹp</span>
+            </div>
+        </section>
 
-
-        <!-- User Info + Logout (cố định góc trên phải) -->
-        <div class="fixed top-4 right-4 flex items-center space-x-2 z-50">
-            <span class="text-black font-medium text-sm">👤 <span id="usernameDisplay">Khách</span></span>
-            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm shadow-md transition">Đăng xuất</button>
-        </div>
-
-        <script>
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center md:gap-4">
+                <input type="text" id="queryInput" placeholder="Nhập lệnh ở đây..." class="flex-1 px-3 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <div class="flex flex-wrap gap-2 pt-3 md:pt-0">
+                    <button onclick="sendQuery()" class="px-4 py-3 rounded-lg bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700">Gửi</button>
+                    <button onclick="showAllDatabase()" class="px-4 py-3 rounded-lg bg-slate-100 text-slate-800 font-semibold hover:bg-slate-200">Show All Database</button>
+                </div>
+            </div>
+            <div id="result" class="result bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-800 min-h-[120px]">
+                Kết quả sẽ hiển thị ở đây
+            </div>
+        </section>
+    </main>
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const username = localStorage.getItem("username");
-            const role = localStorage.getItem("role");
+            const ten_dang_nhap = localStorage.getItem("ten_dang_nhap");
+            const vai_tro = localStorage.getItem("vai_tro");
 
             // Chưa login
-            if (!username) {
-                alert("❌ Bạn chưa đăng nhập. Vui lòng login trước khi sử dụng tính năng này.");
-                window.location.href = "/"; 
+            if (!ten_dang_nhap) {
+                alert("❌ Bạn chưa đăng nhập.");
+                window.location.href = "/login";
                 return;
             }
-
             // Không phải admin
-            if (role !== "admin") {
-                alert("⛔ Bạn không có quyền truy cập. Chỉ Admin mới được vào.");
-                window.location.href = "/";
+            if (vai_tro !== "admin") {
+                alert("⛔ Chỉ Admin mới được vào.");
+                window.location.href = "/login";
                 return;
             }
 
             // Nếu đã login + role admin → hiển thị username
-            document.getElementById("usernameDisplay").textContent = username;
+            document.getElementById("usernameDisplay").textContent = ten_dang_nhap;
         });
 
         // Xử lý logout
         document.getElementById("logoutBtn").addEventListener("click", () => {
-            localStorage.removeItem("username");
-            localStorage.removeItem("role");
-            window.location.href = "/";
+            localStorage.removeItem("ten_dang_nhap");
+            localStorage.removeItem("vai_tro");
+            localStorage.removeItem("id_nguoi_dung");
+
+            window.location.href = "/login";
         });
-        </script>
+    </script>
 
 
-    <div class="query-container">
-        <input type="text" id="queryInput" placeholder="Nhập lệnh ở đây...">
-        <button onclick="sendQuery()">Gửi</button>
-        <button onclick="showAllDatabase()">Show All Database</button>
-        <div class="result" id="result">Kết quả sẽ hiển thị ở đây</div>
-    </div>
 
 
     <script>
@@ -224,8 +145,12 @@
             try {
                 const response = await fetch("/run_query", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ query })
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        query
+                    })
                 });
 
                 const data = await response.json();
@@ -301,4 +226,5 @@
     </script>
 
 </body>
+
 </html>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   FlatList,
   RadioButton,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getExamsList, getExamDetail, submitExam } from './api';
@@ -117,6 +118,74 @@ const ExamListView = ({ onSelectExam, onBack }) => {
   );
 };
 
+// --- QUESTION CARD COMPONENT ---
+const EssayInput = memo(({ value, onChangeText }) => (
+  <TextInput
+    style={styles.essayInput}
+    placeholder="Nhập câu trả lời của bạn tại đây..."
+    placeholderTextColor="#999"
+    multiline={true}
+    numberOfLines={6}
+    value={value || ''}
+    onChangeText={onChangeText}
+    scrollEnabled={true}
+  />
+));
+
+const QuestionCard = memo(({ question, index, answer, onAnswerChange }) => (
+  <View style={styles.questionCard}>
+    <Text style={styles.questionNumber}>Câu {index + 1}</Text>
+    <Text style={styles.questionText}>{question.noi_dung}</Text>
+    <View style={styles.difficultyBadge}>
+      <Text style={styles.difficultyText}>
+        {question.muc_do === 'de' && '⭐ Dễ'}
+        {question.muc_do === 'trung_binh' && '⭐⭐ Trung bình'}
+        {question.muc_do === 'kho' && '⭐⭐⭐ Khó'}
+      </Text>
+    </View>
+
+    {question.loai_cau_hoi === 'trac_nghiem' ? (
+      <View style={styles.answerContainer}>
+        {question.dap_an?.map((ans) => (
+          <TouchableOpacity
+            key={ans.id_dapan}
+            style={[
+              styles.answerOption,
+              answer === ans.id_dapan && styles.selectedAnswer,
+            ]}
+            onPress={() => onAnswerChange(question.id_cauhoi, ans.id_dapan)}
+          >
+            <View style={styles.radioOption}>
+              <View
+                style={[
+                  styles.radioCircle,
+                  answer === ans.id_dapan && styles.radioSelected,
+                ]}
+              />
+            </View>
+            <Text
+              style={[
+                styles.answerText,
+                answer === ans.id_dapan && styles.selectedAnswerText,
+              ]}
+            >
+              {ans.noi_dung}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    ) : (
+      <View style={styles.essayAnswerContainer}>
+        <Text style={styles.essayLabel}>📝 Câu trả lời tự luận của bạn:</Text>
+        <EssayInput
+          value={typeof answer === 'string' ? answer : ''}
+          onChangeText={(text) => onAnswerChange(question.id_cauhoi, text)}
+        />
+      </View>
+    )}
+  </View>
+));
+
 // --- EXAM DETAIL VIEW (Chi tiết bài kiểm tra) ---
 const ExamDetailView = ({ examId, onBack, userId }) => {
   const [exam, setExam] = useState(null);
@@ -147,12 +216,12 @@ const ExamDetailView = ({ examId, onBack, userId }) => {
     }
   };
 
-  const handleAnswerChange = (questionId, answerId) => {
-    setAnswers({
-      ...answers,
+  const handleAnswerChange = useCallback((questionId, answerId) => {
+    setAnswers((prevAnswers) => ({
+      ...prevAnswers,
       [questionId]: answerId,
-    });
-  };
+    }));
+  }, []);
 
   const handleSubmit = async () => {
     // Kiểm tra trả lời hết hết
@@ -231,57 +300,6 @@ const ExamDetailView = ({ examId, onBack, userId }) => {
     );
   }
 
-  const QuestionCard = ({ question, index }) => (
-    <View style={styles.questionCard}>
-      <Text style={styles.questionNumber}>Câu {index + 1}</Text>
-      <Text style={styles.questionText}>{question.noi_dung}</Text>
-      <View style={styles.difficultyBadge}>
-        <Text style={styles.difficultyText}>
-          {question.muc_do === 'de' && '⭐ Dễ'}
-          {question.muc_do === 'trung_binh' && '⭐⭐ Trung bình'}
-          {question.muc_do === 'kho' && '⭐⭐⭐ Khó'}
-        </Text>
-      </View>
-
-      {question.loai_cau_hoi === 'trac_nghiem' ? (
-        <View style={styles.answerContainer}>
-          {question.dap_an?.map((ans) => (
-            <TouchableOpacity
-              key={ans.id_dapan}
-              style={[
-                styles.answerOption,
-                answers[question.id_cauhoi] === ans.id_dapan && styles.selectedAnswer,
-              ]}
-              onPress={() => handleAnswerChange(question.id_cauhoi, ans.id_dapan)}
-            >
-              <View style={styles.radioOption}>
-                <View
-                  style={[
-                    styles.radioCircle,
-                    answers[question.id_cauhoi] === ans.id_dapan && styles.radioSelected,
-                  ]}
-                />
-              </View>
-              <Text
-                style={[
-                  styles.answerText,
-                  answers[question.id_cauhoi] === ans.id_dapan && styles.selectedAnswerText,
-                ]}
-              >
-                {ans.noi_dung}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : (
-        <View style={styles.essayAnswerContainer}>
-          <Text style={styles.essayLabel}>Câu trả lời tự luận:</Text>
-          <Text style={styles.essayAnswer}>{question.dap_an?.[0]?.noi_dung || 'N/A'}</Text>
-        </View>
-      )}
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -299,7 +317,13 @@ const ExamDetailView = ({ examId, onBack, userId }) => {
         )}
 
         {exam.cau_hoi?.map((q, idx) => (
-          <QuestionCard key={q.id_cauhoi} question={q} index={idx} />
+          <QuestionCard 
+            key={q.id_cauhoi} 
+            question={q} 
+            index={idx}
+            answer={answers[q.id_cauhoi]}
+            onAnswerChange={handleAnswerChange}
+          />
         ))}
 
         <View style={styles.submissionInfo}>
@@ -567,12 +591,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#868e96',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  essayAnswer: {
+  essayInput: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
     fontSize: 14,
     color: '#2f3542',
-    lineHeight: 20,
+    textAlignVertical: 'top',
+    minHeight: 120,
+    maxHeight: 180,
   },
   submissionInfo: {
     backgroundColor: '#cfe9f3',

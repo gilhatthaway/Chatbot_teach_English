@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Community Posts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <div class="bg-white rounded p-6 shadow">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+        <div>
+          <h1 class="text-2xl font-semibold">Community Feed</h1>
+          <p class="text-sm text-slate-500">Đăng bài, bình luận, thả reaction và báo cáo nội dung xấu.</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a href="/communities" class="px-4 py-2 bg-indigo-600 text-white rounded">Cộng đồng</a>
+          <a href="/groups" class="px-4 py-2 bg-blue-600 text-white rounded">Nhóm</a>
+          <a href="/messages" class="px-4 py-2 bg-slate-200 text-slate-700 rounded">Tin nhắn</a>
+          <a href="/admin/moderation" class="px-4 py-2 bg-red-600 text-white rounded">Admin</a>
+        </div>
+      </div>
+      <div class="space-y-3 mb-6">
+        <textarea id="postContent" placeholder="Hôm nay bạn muốn chia sẻ gì?" class="w-full p-4 border rounded h-32"></textarea>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input id="communityId" placeholder="Community id (optional)" class="p-3 border rounded" />
+          <button id="openStickers" class="p-3 border rounded bg-white text-slate-700">Open stickers</button>
+          <button id="createPost" class="px-4 py-3 bg-green-600 text-white rounded">Đăng bài</button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between text-sm text-slate-600 mb-4">
+        <div id="feedSummary">Đang tải bài viết...</div>
+        <button id="loadMore" class="px-3 py-2 bg-gray-200 rounded">Tải thêm</button>
+      </div>
+
+      <div id="feed" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <script>
+    let offset = 0;
+    const limit = 10;
+    let totalPosts = 0;
+    const feed = document.getElementById('feed');
+    const currentUser = parseInt(localStorage.getItem('id_nguoi_dung')) || 0;
+    const feedSummary = document.getElementById('feedSummary');
+    const loadMoreBtn = document.getElementById('loadMore');
+    const params = new URLSearchParams(window.location.search);
+    const currentCommunityId = params.get('community_id');
+    if (currentCommunityId) {
+      document.getElementById('communityId').value = currentCommunityId;
+    }
+
+    async function loadPosts(reset = false){
+      if(reset) { offset = 0; feed.innerHTML = ''; }
+      feedSummary.textContent = 'Đang tải bài viết...';
+      try {
+        const communityParam = currentCommunityId ? `&community_id=${encodeURIComponent(currentCommunityId)}` : '';
+        const res = await fetch(`/api/community/posts?limit=${limit}&offset=${offset}${communityParam}`);
+        const d = await res.json();
+        if(d.status !== 'success') {
+          feedSummary.textContent = 'Không thể tải bài viết. Vui lòng thử lại.';
+          return;
+        }
+        totalPosts = d.total || d.posts.length;
+        if (reset && (!d.posts || !d.posts.length)) {
+          feed.innerHTML = '<div class="p-4 text-center text-slate-600 border rounded bg-slate-50">Chưa có bài viết nào. Hãy đăng bài đầu tiên!</div>';
+        }
+        d.posts.forEach(p => renderPost(p));
+        offset += d.posts.length;
+        feedSummary.textContent = `Hiển thị ${Math.min(offset, totalPosts)} / ${totalPosts} bài viết`;
+        loadMoreBtn.disabled = offset >= totalPosts;
+        loadMoreBtn.textContent = loadMoreBtn.disabled ? 'Không còn bài viết' : 'Tải thêm';
+      } catch (err) {
+        feedSummary.textContent = 'Lỗi khi tải bài viết: ' + err.message;
+      }
+    }
+
+    function renderPost(p){
+      const el = document.createElement('div');
+      el.className = 'p-4 rounded border bg-white shadow-sm';
+      const communityLabel = p.id_community ? `<span class="text-xs uppercase tracking-wide text-blue-600">Community ${p.id_community}</span>` : '';
+      el.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:justify-between gap-3">
+          <div>
+            <div class="font-semibold text-slate-900">${p.ten_dang_nhap || p.id_nguoi_dung}</div>
+            <div class="text-xs text-slate-500">${p.created_at || ''} ${communityLabel}</div>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs text-slate-500">
+            <span class="reactionCount" data-post-id="${p.id_post}">Reactions: ${p.reactions || 0}</span>
+            <span>Comments: ${p.comments || 0}</span>
+          </div>
+        </div>
+        <div class="mt-3 text-slate-700 whitespace-pre-wrap">${escapeHtml(p.content)}</div>
+        <div class="mt-4 flex flex-wrap gap-2 text-sm">
+          <button class="reactionBtn px-4 py-2 bg-blue-50 text-blue-700 rounded" data-id="${p.id_post}" data-reaction="like">👍 Like</button>
+          <button class="reactionBtn px-4 py-2 bg-red-50 text-red-700 rounded" data-id="${p.id_post}" data-reaction="love">❤️ Love</button>
+          <button class="stickerPickerBtn px-4 py-2 bg-yellow-50 text-yellow-700 rounded" data-id="${p.id_post}">✨ Sticker</button>
+          <button class="commentBtn px-4 py-2 bg-slate-100 rounded" data-id="${p.id_post}">Comment</button>
+          <button class="reportBtn px-4 py-2 bg-amber-100 text-amber-800 rounded" data-id="${p.id_post}">Report</button>
+        </div>
+        <div class="mt-3 hidden commentSection bg-slate-50 p-3 rounded border" data-id="${p.id_post}"></div>
+      `;
+      feed.appendChild(el);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    async function showComments(postId, element){
+      const section = element.querySelector('.commentSection');
+      if (!section) return;
+      if (!section.classList.contains('hidden')) {
+        section.classList.add('hidden');
+        return;
+      }
+      section.innerHTML = '<div class="text-sm text-slate-500">Loading comments...</div>';
+      section.classList.remove('hidden');
+      const res = await fetch(`/api/community/post/${postId}/comments`);
+      const d = await res.json();
+      if(d.status !== 'success'){
+        section.innerHTML = `<div class="text-sm text-red-600">Không tải được bình luận.</div>`;
+        return;
+      }
+      section.innerHTML = `<div class="space-y-3">${d.comments.map(c => `<div class="p-3 bg-white border rounded"><div class="text-xs text-slate-500">${c.ten_dang_nhap || c.id_nguoi_dung} • ${c.created_at || ''}</div><div class="mt-1 text-slate-700">${escapeHtml(c.content)}</div></div>`).join('')}</div><div class="mt-3 flex gap-2"><input class="commentInput flex-1 p-2 border rounded" placeholder="Viết bình luận..." /><button class="submitCommentBtn px-3 py-2 bg-blue-600 text-white rounded">Gửi</button></div>`;
+      const submitBtn = section.querySelector('.submitCommentBtn');
+      const commentInput = section.querySelector('.commentInput');
+      submitBtn.addEventListener('click', async () => {
+        const comment = commentInput.value.trim();
+        if(!comment) return;
+        const resp = await fetch(`/api/community/post/${postId}/comment`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id_nguoi_dung: currentUser, content: comment }) });
+        const result = await resp.json();
+        if(result.status === 'success'){
+          showComments(postId, element);
+        } else {
+          alert(result.message || 'Comment failed');
+        }
+      });
+    }
+
+    document.getElementById('createPost').addEventListener('click', async ()=>{
+      const content = document.getElementById('postContent').value.trim();
+      const id_community = document.getElementById('communityId').value || null;
+      if(!content) return alert('Nội dung rỗng');
+      const payload = { id_nguoi_dung: currentUser, content, id_community: id_community ? parseInt(id_community) : null };
+      const res = await fetch('/api/community/post', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if(data.status === 'success'){
+        document.getElementById('postContent').value = '';
+        loadPosts(true);
+      } else {
+        alert(data.message || 'Đăng bài thất bại');
+      }
+    });
+
+    loadMoreBtn.addEventListener('click', ()=> loadPosts());
+
+    feed.addEventListener('click', async (event) => {
+      const btn = event.target;
+      if(btn.matches('.reactionBtn')){
+        const id = btn.dataset.id;
+        const reaction = btn.dataset.reaction || 'like';
+        const res = await fetch(`/api/community/post/${id}/reaction`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id_nguoi_dung: currentUser, reaction_type: reaction }) });
+        const result = await res.json();
+        appendToast(result.status === 'success' ? 'Đã gửi reaction' : `Lỗi: ${result.message}`);
+        if(result.status === 'success') {
+          const count = feed.querySelector(`.reactionCount[data-post-id="${id}"]`);
+          if(count) {
+            const curr = parseInt(count.textContent.match(/\d+/)[0]) || 0;
+            count.textContent = `Reactions: ${curr + 1}`;
+          }
+        }
+      }
+      if(btn.matches('.stickerPickerBtn')){
+        const postId = btn.dataset.id;
+        showStickerPicker(postId);
+      }
+      if(btn.matches('.commentBtn')){
+        const postId = btn.dataset.id;
+        const card = btn.closest('.rounded');
+        showComments(postId, card);
+      }
+      if(btn.matches('.reportBtn')){
+        const postId = btn.dataset.id;
+        const reason = prompt('Lý do báo cáo bài viết này?');
+        if(!reason) return;
+        const res = await fetch('/api/report', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reporter_id: currentUser, target_type: 'post', target_id: parseInt(postId), reason }) });
+        const r = await res.json();
+        appendToast(r.status === 'success' ? 'Đã gửi báo cáo' : `Lỗi báo cáo: ${r.message}`);
+      }
+    });
+
+    // Stickers modal - inline sticker picker
+    function showStickerPicker(postId){
+      if(stickersCache.length === 0){
+        fetch('/api/stickers').then(r=>r.json()).then(d=>{ if(d.status==='success') stickersCache = d.stickers || []; showStickerPicker(postId); });
+        return;
+      }
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+      modal.innerHTML = `
+        <div class="bg-white rounded p-6 max-w-sm w-96">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Chọn sticker</h2>
+            <button class="closeModal text-2xl text-slate-500">&times;</button>
+          </div>
+          <div class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+            ${stickersCache.map(s => `<button class="selectSticker text-3xl p-2 rounded hover:bg-slate-100" data-sticker="${s.id_sticker}" title="${s.name}">✨</button>`).join('')}
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.querySelector('.closeModal').addEventListener('click', () => modal.remove());
+      modal.querySelectorAll('.selectSticker').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const stickerId = btn.dataset.sticker;
+          const res = await fetch(`/api/community/post/${postId}/sticker`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: currentUser, sticker_id: stickerId }) });
+          const r = await res.json();
+          appendToast(r.status === 'success' ? 'Sticker sent' : `Error: ${r.message}`);
+          modal.remove();
+          if(r.status === 'success') {
+            const count = feed.querySelector(`.reactionCount[data-post-id="${postId}"]`);
+            if(count) {
+              const curr = parseInt(count.textContent.match(/\d+/)[0]) || 0;
+              count.textContent = `Reactions: ${curr + 1}`;
+            }
+          }
+        });
+      });
+    }
+
+    const openStickers = document.getElementById('openStickers');
+    let stickersCache = [];
+    openStickers.addEventListener('click', async () => {
+      if(stickersCache.length === 0){
+        const res = await fetch('/api/stickers');
+        const d = await res.json();
+        if(d.status === 'success') stickersCache = d.stickers || [];
+      }
+      const html = stickersCache.map(s => `<button class="m-1 stickerPicker" data-sticker="${s.id_sticker}"><img src="${s.url}" class="w-12 h-12" title="${s.name}"/></button>`).join('') || '<div class="text-sm text-slate-500">No stickers</div>';
+      const win = window.open('', 'stickers', 'width=420,height=400');
+      win.document.write(`<html><head><title>Stickers</title><style>body{font-family:sans-serif;padding:12px}</style></head><body>${html}<script>document.querySelectorAll('.stickerPicker').forEach(b=>b.addEventListener('click',()=>{ const id=b.dataset.sticker; window.opener.postMessage({sticker:id}, '*'); window.close(); }));</script></body></html>`);
+    });
+
+    window.addEventListener('message', (e) => {
+      try{
+        const stickerId = e.data && e.data.sticker;
+        if(!stickerId) return;
+        // when a sticker picked, prompt for post id
+        const postId = prompt('Enter post id to react with sticker:');
+        if(!postId) return;
+        fetch(`/api/community/post/${postId}/sticker`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: currentUser, sticker_id: stickerId }) }).then(r=>r.json()).then(d=>{ appendToast(d.status==='success' ? 'Sticker sent' : 'Error sending sticker'); if(d.status==='success') { const count = feed.querySelector(`.reactionCount[data-post-id="${postId}"]`); if(count) { const curr = parseInt(count.textContent.match(/\d+/)[0]) || 0; count.textContent = `Reactions: ${curr + 1}`; } } });
+      }catch(err){ }
+    });
+
+    function appendToast(message){
+      feedSummary.textContent = message;
+      setTimeout(() => { feedSummary.textContent = offset ? `Hiển thị ${Math.min(offset, totalPosts)} / ${totalPosts} bài viết` : '' }, 3000);
+    }
+
+    loadPosts(true);
+  </script>
+</body>
+</html>

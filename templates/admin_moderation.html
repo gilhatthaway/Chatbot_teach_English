@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Moderation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Admin Moderation</h1>
+    <div class="mb-6 flex gap-2 flex-wrap">
+      <button id="refreshBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Refresh infractions</button>
+      <button id="refreshReports" class="px-3 py-2 bg-yellow-600 text-white rounded">Refresh reports</button>
+      <button id="refreshAuditBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Refresh audit log</button>
+      <input id="reportFilterSearch" placeholder="Search reports..." class="flex-1 min-w-48 p-2 border rounded" />
+    </div>
+
+    <h2 class="text-xl font-semibold mt-4 mb-2">Audit Log (Recent Admin Actions)</h2>
+    <div id="auditList" class="space-y-2 mb-6 max-h-48 overflow-y-auto text-xs"></div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-2">Recent Infractions</h2>
+    <div id="infractionsList" class="space-y-3"></div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-2">Reports</h2>
+    <div id="reportsList" class="space-y-3"></div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-2">Ban history</h2>
+    <div id="bansList" class="space-y-3 mb-6"></div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-2">Ban / Unban</h2>
+    <div class="grid grid-cols-4 gap-2 items-center">
+      <input id="banUserId" placeholder="user_id" class="col-span-1 p-2 border rounded" />
+      <input id="banLevel" placeholder="level" class="col-span-1 p-2 border rounded" />
+      <input id="banDays" placeholder="days" class="col-span-1 p-2 border rounded" />
+      <button id="banBtn" class="px-3 py-2 bg-red-600 text-white rounded">Ban</button>
+    </div>
+    <div class="mt-3">
+      <button id="unbanBtn" class="px-3 py-2 bg-green-600 text-white rounded">Unban</button>
+    </div>
+  </div>
+
+  <script>
+    let allReports = [];
+    
+    async function loadAuditLog(){
+      try{
+        const res = await fetch('/api/admin/audit_log');
+        const data = await res.json();
+        const el = document.getElementById('auditList');
+        if(!data || data.status !== 'success') { el.innerHTML = '<div class="p-2 bg-white rounded">Error loading audit log</div>'; return; }
+        el.innerHTML = (data.actions || []).map(a=>`<div class="p-2 bg-slate-50 rounded border-l-4 border-indigo-400"><div class="font-mono text-xs"><strong>${a.action_type}</strong> on ${a.target_type}#${a.target_id} @ ${a.created_at}</div><div class="text-xs text-slate-600">${a.details || ''}</div></div>`).join('');
+      }catch(e){ document.getElementById('auditList').innerHTML = '<div class="text-red-600">Error</div>'; }
+    }
+
+    async function loadInfractions(){
+      const res = await fetch('/api/admin/infractions');
+      const data = await res.json();
+      const el = document.getElementById('infractionsList');
+      if (!data || data.status !== 'success') { el.innerHTML = '<div class="p-3 bg-white rounded">Error loading</div>'; return; }
+      el.innerHTML = data.infractions.map(i=>`<div class="p-3 bg-white rounded border"><div class="text-sm text-gray-600">${i.created_at} — ${i.ten_dang_nhap}</div><div class="text-sm">${i.reason} (w=${i.weight})</div></div>`).join('');
+    }
+
+    async function loadReports(){
+      const res = await fetch('/api/admin/reports');
+      const data = await res.json();
+      const el = document.getElementById('reportsList');
+      if (!data || data.status !== 'success') { el.innerHTML = '<div class="p-3 bg-white rounded">Error loading reports</div>'; return; }
+      allReports = data.reports || [];
+      renderReports(allReports);
+    }
+
+    function renderReports(reports){
+      const el = document.getElementById('reportsList');
+      el.innerHTML = reports.map(r=>{
+          return `<div class="p-3 bg-white rounded border"><div class="flex justify-between items-center"><div><div class="text-sm text-gray-600">${r.created_at} — Reporter: ${r.reporter_name || r.reporter_id}</div><div class="font-semibold">${r.target_type} #${r.target_id}</div></div><div class="space-x-2"><button class="viewTargetBtn px-2 py-1 bg-indigo-50 text-indigo-700 rounded" data-type="${r.target_type}" data-id="${r.target_id}">View</button><button class="resolveBtn px-2 py-1 bg-green-50 text-green-700 rounded" data-id="${r.id_report}">Resolve</button><button class="dismissBtn px-2 py-1 bg-gray-50 rounded" data-id="${r.id_report}">Dismiss</button></div></div><div class="mt-2">${r.reason || ''}</div></div>`
+      }).join('');
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadInfractions);
+    document.getElementById('refreshReports').addEventListener('click', loadReports);
+    document.getElementById('refreshAuditBtn').addEventListener('click', loadAuditLog);
+    
+    document.getElementById('reportFilterSearch').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtered = allReports.filter(r => (r.reason || '').toLowerCase().includes(q) || r.reporter_name?.toLowerCase().includes(q));
+      renderReports(filtered);
+    });
+
+    document.getElementById('banBtn').addEventListener('click', async ()=>{
+      const user_id = document.getElementById('banUserId').value;
+      const level = document.getElementById('banLevel').value || 1;
+      const days = document.getElementById('banDays').value || 1;
+      await fetch('/api/admin/ban', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id, level, days, reason:'Manual ban from admin UI'}) });
+      alert('Ban requested');
+      loadInfractions();
+      loadBans();
+      loadAuditLog();
+    });
+    document.getElementById('unbanBtn').addEventListener('click', async ()=>{
+      const user_id = document.getElementById('banUserId').value;
+      await fetch('/api/admin/unban', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id}) });
+      alert('Unban requested');
+      loadInfractions();
+      loadBans();
+      loadAuditLog();
+    });
+
+    async function loadBans(){
+      const res = await fetch('/api/admin/bans');
+      const data = await res.json();
+      const el = document.getElementById('bansList');
+      if (!data || data.status !== 'success') { el.innerHTML = '<div class="p-3 bg-white rounded">Error loading bans</div>'; return; }
+      el.innerHTML = data.bans.map(b=>`<div class="p-3 bg-white rounded border"><div class="text-sm text-gray-600">${b.created_at} — ${b.ten_dang_nhap}</div><div class="text-sm">Level ${b.ban_level} • Days ${b.days} • Status: ${b.status || 'active'}</div><div class="mt-2 text-sm text-slate-700">Reason: ${b.reason || 'Không có'}</div><div class="mt-2"><button class="unbanBtn px-2 py-1 bg-green-50 text-green-700 rounded" data-user="${b.user_id}">Unban</button></div></div>`).join('');
+    }
+
+    // delegate report actions
+    document.addEventListener('click', async (e)=>{
+      if(e.target.matches('.viewTargetBtn')){
+        const type = e.target.dataset.type; const id = e.target.dataset.id;
+        try{
+          const res = await fetch(`/api/admin/${type}/${id}`);
+          const j = await res.json();
+          if(j.status === 'success'){
+            let html = '';
+            let ownerId = null;
+            if(type === 'post'){
+              const p = j.post; ownerId = p.id_nguoi_dung; html = `<div class="font-semibold mb-2">Post #${p.id_post} by ${p.ten_dang_nhap||p.id_nguoi_dung}</div><div class="mb-2">${p.content}</div>`;
+              if(p.media){ try{ const m = p.media; if(Array.isArray(m)) m.forEach(u=> html += `<div class="mb-2"><img src="${u.url||u}" class="max-w-full" /></div>`); else html += `<div class="mb-2"><img src="${m.url||m}" class="max-w-full" /></div>` }catch(e){} }
+            } else if(type === 'comment'){
+              const c = j.comment; ownerId = c.id_nguoi_dung; html = `<div class="font-semibold mb-2">Comment #${c.id_comment} by ${c.ten_dang_nhap||c.id_nguoi_dung}</div><div class="mb-2">${c.content}</div>`;
+            } else if(type === 'message'){
+              const m = j.message; ownerId = m.sender_id; html = `<div class="font-semibold mb-2">Message #${m.id_message} by ${m.sender_name||m.sender_id}</div><div class="mb-2">${m.content}</div>`;
+              if(m.attachments){ try{ const a = m.attachments; if(Array.isArray(a)) a.forEach(u=> html += `<div class="mb-2"><img src="${u.url||u}" class="max-w-full" /></div>`); }catch(e){} }
+            }
+            // populate modal
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modalMeta').textContent = `${type} #${id}`;
+            document.getElementById('modalDeleteBtn').dataset.type = type;
+            document.getElementById('modalDeleteBtn').dataset.id = id;
+            document.getElementById('modalBanBtn').dataset.owner = ownerId;
+            document.getElementById('adminModal').classList.remove('hidden');
+          } else alert('Không tìm thấy nội dung');
+        } catch(err){ alert('Lỗi khi tải nội dung') }
+      }
+      if(e.target.matches('.resolveBtn')){
+        const id = e.target.dataset.id;
+        const handled_by = localStorage.getItem('id_nguoi_dung') || null;
+        await fetch(`/api/admin/reports/${id}/resolve`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ handled_by, resolution: 'Resolved by admin'}) });
+        loadReports();
+      }
+      if(e.target.matches('.dismissBtn')){
+        const id = e.target.dataset.id;
+        const handled_by = localStorage.getItem('id_nguoi_dung') || null;
+        await fetch(`/api/admin/reports/${id}/dismiss`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ handled_by }) });
+        loadReports();
+      }
+      if(e.target.matches('.unbanBtn')){
+        const user_id = e.target.dataset.user;
+        if(!user_id) return alert('Missing user id');
+        await fetch('/api/admin/unban', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id }) });
+        alert('Unban requested'); loadBans();
+      }
+    });
+
+    loadInfractions();
+    loadReports();
+    loadBans();
+    loadAuditLog();
+  </script>
+  <!-- Modal -->
+  <div id="adminModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white w-11/12 md:w-2/3 p-4 rounded shadow-lg">
+      <div class="flex justify-between items-center mb-2">
+        <div id="modalMeta" class="font-semibold"></div>
+        <div class="space-x-2">
+          <button id="modalBanBtn" class="px-3 py-1 bg-red-600 text-white rounded" data-owner="">Ban Owner</button>
+          <button id="modalDeleteBtn" class="px-3 py-1 bg-gray-600 text-white rounded" data-type="" data-id="">Delete</button>
+          <button id="modalCloseBtn" class="px-3 py-1 bg-gray-200 rounded">Close</button>
+        </div>
+      </div>
+      <div id="modalBody" class="max-h-80 overflow-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('modalCloseBtn').addEventListener('click', ()=> document.getElementById('adminModal').classList.add('hidden'));
+    document.getElementById('modalDeleteBtn').addEventListener('click', async (e)=>{
+      const type = e.target.dataset.type; const id = e.target.dataset.id; const admin_id = localStorage.getItem('id_nguoi_dung')||null;
+      if(!type || !id) return alert('Missing');
+      const url = `/api/admin/${type}/${id}/delete`;
+      try{
+        const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ admin_id }) });
+        const j = await r.json(); if(j.status === 'success'){ alert('Deleted'); document.getElementById('adminModal').classList.add('hidden'); loadReports(); loadInfractions(); } else alert(j.message||'Error');
+      }catch(err){ alert('Error'); }
+    });
+    document.getElementById('modalBanBtn').addEventListener('click', async (e)=>{
+      const owner = e.target.dataset.owner; if(!owner) return alert('No owner');
+      const days = prompt('Ban for how many days?', '1'); const level = prompt('Ban level?', '1');
+      try{
+        const r = await fetch('/api/admin/ban', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: owner, level: parseInt(level||1), days: parseInt(days||1), reason: 'Admin action from moderation UI' }) });
+        const j = await r.json(); if(j.status === 'success'){ alert('User banned'); document.getElementById('adminModal').classList.add('hidden'); loadReports(); } else alert(j.message||'Error');
+      }catch(err){ alert('Error'); }
+    });
+
+    // Bulk unban control
+    const bulkUnbanDiv = document.createElement('div');
+    bulkUnbanDiv.style.marginTop = '12px';
+    bulkUnbanDiv.innerHTML = `<div class="mt-4"><input id="bulkUnbanIds" placeholder="Comma-separated user_ids to unban" class="p-2 border rounded w-2/3"/><button id="bulkUnbanBtn" class="px-3 py-2 bg-green-600 text-white rounded">Unban Bulk</button></div>`;
+    document.querySelector('.max-w-4xl').appendChild(bulkUnbanDiv);
+    document.getElementById('bulkUnbanBtn').addEventListener('click', async ()=>{
+      const raw = document.getElementById('bulkUnbanIds').value || '';
+      const ids = raw.split(',').map(s=>s.trim()).filter(Boolean);
+      if(!ids.length) return alert('No ids');
+      for(const uid of ids){
+        await fetch('/api/admin/unban', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: uid }) });
+      }
+      alert('Bulk unban requested'); loadBans();
+    });
+  </script>
+</body>
+</html>

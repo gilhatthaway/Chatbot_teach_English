@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Quiz - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-white to-indigo-50 min-h-screen text-slate-800">
+    <header class="bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-semibold">AI</div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Admin Quiz</p>
+                    <p class="font-semibold text-slate-900">Quản lý quiz tự động</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/home" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-800 hover:bg-slate-200 transition text-sm">Trang chủ</a>
+                <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition text-sm">Đăng xuất</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <div class="mb-4">
+            <a href="/admin/dashboard" class="px-3 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">⬅ Quay lại</a>
+        </div>
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-5">
+            <div class="flex flex-col gap-1">
+                <p class="text-sm text-indigo-600 font-semibold">Tài liệu tham khảo</p>
+                <h1 class="text-3xl font-bold text-slate-900">Upload tài liệu admin</h1>
+                <p class="text-slate-500">Các tài liệu này sẽ được AI sử dụng để tạo quiz và chấm điểm dựa trên nội dung đúng.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium text-slate-700">Tiêu đề tài liệu</label>
+                    <input id="docTitle" type="text" placeholder="Ví dụ: Từ vựng gia đình" class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div class="lg:col-span-2 space-y-3">
+                    <label class="block text-sm font-medium text-slate-700">Nội dung tài liệu</label>
+                    <textarea id="docContent" rows="5" placeholder="Dán nội dung, đồ họa, ví dụ và giải thích..." class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+                <div class="lg:col-span-3 space-y-3">
+                    <label class="block text-sm font-medium text-slate-700">Tệp tài liệu</label>
+                    <input id="docFileInput" type="file" accept=".txt,.md,.json,.csv,.pdf,.doc,.docx" class="w-full text-sm text-slate-700 border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div class="flex flex-wrap gap-3">
+                    <button id="saveDocBtn" class="px-5 py-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition">Lưu tài liệu</button>
+                    <button id="uploadFileBtn" class="px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">Upload tệp</button>
+                </div>
+                <p id="docStatus" class="text-sm text-slate-500"></p>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-5">
+            <div class="flex flex-col gap-1">
+                <p class="text-sm text-purple-600 font-semibold">Tạo quiz</p>
+                <h2 class="text-2xl font-bold text-slate-900">Sinh quiz tự động từ tài liệu</h2>
+                <p class="text-slate-500">Chọn tài liệu admin có sẵn và AI sẽ tạo một quiz 15 câu, gồm cả từ vựng và ngữ pháp.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="space-y-3 lg:col-span-1">
+                    <label class="block text-sm font-medium text-slate-700">Tiêu đề quiz</label>
+                    <input id="quizTitle" type="text" placeholder="Quiz luyện từ và ngữ pháp" class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                </div>
+                <div class="lg:col-span-2 space-y-3">
+                    <label class="block text-sm font-medium text-slate-700">Mô tả quiz</label>
+                    <input id="quizDescription" type="text" placeholder="Quiz tự động sinh từ tài liệu admin" class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                </div>
+            </div>
+            <div class="space-y-3">
+                <p class="text-sm font-medium text-slate-700">Chọn tài liệu sử dụng</p>
+                <div id="documentList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+                <button id="generateQuizBtn" class="px-5 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition">Sinh quiz AI</button>
+                <p id="generateStatus" class="text-sm text-slate-500"></p>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-5">
+            <div class="flex flex-col gap-1">
+                <p class="text-sm text-slate-500">Quiz đã tạo</p>
+                <h2 class="text-2xl font-bold text-slate-900">Danh sách quiz</h2>
+            </div>
+            <div id="quizList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+    </main>
+
+    <script>
+        let selectedDocs = new Set();
+
+        async function loadDocuments() {
+            const status = document.getElementById('docStatus');
+            try {
+                const res = await fetch('/api/admin/documents/all');
+                const data = await res.json();
+                const docs = data.documents || [];
+                const list = document.getElementById('documentList');
+                list.innerHTML = '';
+                docs.forEach(doc => {
+                    const card = document.createElement('div');
+                    card.className = 'border border-slate-200 rounded-2xl p-4 bg-slate-50';
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="font-semibold text-slate-900">${doc.tieu_de}</p>
+                                <p class="text-xs text-slate-500 mt-1">${new Date(doc.ngay_tao).toLocaleString()}</p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input type="checkbox" data-id="${doc.id_document}" class="doc-checkbox h-4 w-4 text-indigo-600" />
+                                Chọn
+                            </label>
+                        </div>
+                        <p class="mt-3 text-sm text-slate-600 line-clamp-3">${doc.noi_dung}</p>
+                    `;
+                    list.appendChild(card);
+                });
+                document.querySelectorAll('.doc-checkbox').forEach(el => {
+                    el.addEventListener('change', (event) => {
+                        const id = parseInt(event.target.getAttribute('data-id'), 10);
+                        if (event.target.checked) {
+                            selectedDocs.add(id);
+                        } else {
+                            selectedDocs.delete(id);
+                        }
+                    });
+                });
+                status.textContent = `Đã tải ${docs.length} tài liệu.`;
+            } catch (err) {
+                status.textContent = 'Lỗi khi tải tài liệu.';
+            }
+        }
+
+        async function loadQuizzes() {
+            const res = await fetch('/api/admin/quizzes/all');
+            const data = await res.json();
+            const quizzes = data.quizzes || [];
+            const list = document.getElementById('quizList');
+            list.innerHTML = '';
+            quizzes.forEach(q => {
+                const card = document.createElement('div');
+                card.className = 'border border-slate-200 rounded-2xl p-4 bg-white shadow-sm';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="font-semibold text-slate-900">${q.tieu_de}</p>
+                            <p class="text-sm text-slate-500 mt-1">${q.mo_ta || ''}</p>
+                        </div>
+                        <div class="text-right text-xs text-slate-500">
+                            <div>${q.so_cau} câu</div>
+                            <div>${new Date(q.ngay_tao).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        document.getElementById('saveDocBtn').addEventListener('click', async () => {
+            const title = document.getElementById('docTitle').value.trim();
+            const content = document.getElementById('docContent').value.trim();
+            const status = document.getElementById('docStatus');
+            if (!title || !content) {
+                status.textContent = 'Vui lòng nhập tiêu đề và nội dung.';
+                return;
+            }
+            status.textContent = 'Đang lưu...';
+            const res = await fetch('/api/admin/quiz/document/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tieu_de: title, noi_dung: content })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                status.textContent = 'Đã lưu tài liệu.';
+                document.getElementById('docTitle').value = '';
+                document.getElementById('docContent').value = '';
+                document.getElementById('docFileInput').value = '';
+                selectedDocs.clear();
+                await loadDocuments();
+            } else {
+                status.textContent = data.message || 'Lỗi khi lưu tài liệu.';
+            }
+        });
+
+        document.getElementById('uploadFileBtn').addEventListener('click', async () => {
+            const status = document.getElementById('docStatus');
+            const fileInput = document.getElementById('docFileInput');
+            const file = fileInput.files[0];
+            const title = document.getElementById('docTitle').value.trim();
+            if (!file) {
+                status.textContent = 'Vui lòng chọn tệp để upload.';
+                return;
+            }
+            status.textContent = 'Đang upload tài liệu...';
+            const formData = new FormData();
+            formData.append('file', file);
+            if (title) formData.append('tieu_de', title);
+            try {
+                const res = await fetch('/api/admin/exam/upload_material', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    status.textContent = 'Upload tài liệu thành công.';
+                    document.getElementById('docTitle').value = '';
+                    document.getElementById('docContent').value = '';
+                    fileInput.value = '';
+                    selectedDocs.clear();
+                    await loadDocuments();
+                } else {
+                    status.textContent = data.message || 'Upload tài liệu thất bại.';
+                }
+            } catch (err) {
+                status.textContent = 'Lỗi khi upload tài liệu.';
+                console.error(err);
+            }
+        });
+
+        document.getElementById('generateQuizBtn').addEventListener('click', async () => {
+            const title = document.getElementById('quizTitle').value.trim();
+            const mo_ta = document.getElementById('quizDescription').value.trim();
+            const status = document.getElementById('generateStatus');
+            if (selectedDocs.size === 0) {
+                status.textContent = 'Vui lòng chọn ít nhất 1 tài liệu để tạo quiz.';
+                return;
+            }
+            status.textContent = 'Đang sinh quiz từ AI...';
+            const res = await fetch('/api/admin/quiz/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tieu_de: title || 'Quiz tự động', mo_ta: mo_ta || 'Quiz sinh từ tài liệu', document_ids: Array.from(selectedDocs) })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                status.textContent = 'Đã tạo quiz thành công.';
+                document.getElementById('quizTitle').value = '';
+                document.getElementById('quizDescription').value = '';
+                selectedDocs.clear();
+                await loadDocuments();
+                await loadQuizzes();
+            } else {
+                status.textContent = data.message || 'Tạo quiz thất bại.';
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/login';
+        });
+
+        loadDocuments();
+        loadQuizzes();
+    </script>
+</body>
+</html>

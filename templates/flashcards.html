@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Flashcards của tôi</title>
+    <link href="/static/styles.css" rel="stylesheet">
+    <style>
+        body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #eef2ff; color: #0f172a; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+        .page-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 28px; }
+        .page-header h1 { margin: 0; font-size: 2.25rem; line-height: 1.1; }
+        .page-header p { margin: 8px 0 0; color: #475569; font-size: 1rem; }
+        .button-back { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; background: #ffffff; color: #1d4ed8; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+        .flashcards-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+        .flashcard-card { background: #ffffff; padding: 24px; border-radius: 28px; border: 1px solid #e2e8f0; box-shadow: 0 18px 64px rgba(15, 23, 42, 0.08); transition: transform .2s ease, border-color .2s ease; }
+        .flashcard-card:hover { transform: translateY(-4px); border-color: #2563eb; }
+        .flashcard-tag { display: inline-flex; align-items: center; gap: 8px; background: #eff6ff; color: #1d4ed8; padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
+        .flashcard-title { margin: 18px 0 10px; font-size: 1.85rem; font-weight: 800; color: #0f172a; }
+        .flashcard-meaning { margin: 0 0 16px; color: #475569; line-height: 1.75; }
+        .flashcard-footer { display: block; background: #f8fafc; color: #334155; padding: 16px; border-radius: 18px; font-size: 0.95rem; }
+        .placeholder-card { background: linear-gradient(135deg, #f8fafc, #edf2ff); border: 1px dashed #c7d2fe; color: #64748b; padding: 40px 24px; border-radius: 30px; text-align: center; font-size: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>Flashcards của tôi</h1>
+                <p>Các flashcard nhận được từ phần thưởng streak sẽ được lưu lại tại đây để ôn luyện nhanh.</p>
+            </div>
+            <a href="#" onclick="if (history.length > 1) history.back(); else window.location.href='/'; return false;" class="button-back">
+                ← Quay lại
+            </a>
+        </div>
+
+        <div id="flashcardsList" class="flashcards-grid">
+            <div class="placeholder-card">Đang tải flashcards...</div>
+        </div>
+        <div class="mt-8 flex items-center justify-between gap-3">
+            <div id="flashcardSummary" class="text-sm text-slate-600"></div>
+            <div class="flex gap-2">
+                <button id="prevPage" class="px-4 py-2 rounded bg-slate-200 text-slate-700" disabled>Trước</button>
+                <button id="nextPage" class="px-4 py-2 rounded bg-slate-200 text-slate-700" disabled>Sau</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const limit = 12;
+        let offset = 0;
+        let totalCards = 0;
+
+        const list = document.getElementById('flashcardsList');
+        const summary = document.getElementById('flashcardSummary');
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+
+        async function loadFlashcards(reset = false) {
+            if (reset) offset = 0;
+            const id = localStorage.getItem('id_nguoi_dung');
+            if (!id) {
+                list.innerHTML = '<div class="placeholder-card">Bạn chưa đăng nhập. Vui lòng đăng nhập để xem flashcards.</div>';
+                return;
+            }
+            list.innerHTML = '<div class="placeholder-card">Đang tải flashcards...</div>';
+            try {
+                const res = await fetch(`/api/user/flashcards/${parseInt(id)}?limit=${limit}&offset=${offset}`);
+                const data = await res.json();
+                if (data.status !== 'success') {
+                    list.innerHTML = '<div class="placeholder-card">Không thể tải flashcards. Vui lòng thử lại sau.</div>';
+                    summary.textContent = '';
+                    return;
+                }
+                const cards = data.flashcards || [];
+                totalCards = data.total || 0;
+                if (!cards.length) {
+                    list.innerHTML = '<div class="placeholder-card">Bạn chưa có flashcard nào. Hoàn thành 100 điểm streak để nhận flashcards mới.</div>';
+                    summary.textContent = totalCards ? `Hiển thị 0 / ${totalCards} flashcards` : 'Chưa có flashcards.';
+                    prevBtn.disabled = offset === 0;
+                    nextBtn.disabled = true;
+                    return;
+                }
+                list.innerHTML = cards.map(card => `
+                    <div class="flashcard-card">
+                        <span class="flashcard-tag">Flashcard</span>
+                        <div style="margin-top: 18px; color: #64748b; font-size: 0.9rem;">${card.issued_at || ''}</div>
+                        <h2 class="flashcard-title">${card.tu_vung}</h2>
+                        <p class="flashcard-meaning">${card.y_nghia}</p>
+                        <div class="flashcard-footer">Lý do: ${card.ly_do || 'Phần thưởng streak'}</div>
+                    </div>
+                `).join('');
+                summary.textContent = `Hiển thị ${Math.min(offset + 1, totalCards)} – ${Math.min(offset + cards.length, totalCards)} trên ${totalCards} flashcards`;
+                prevBtn.disabled = offset === 0;
+                nextBtn.disabled = offset + cards.length >= totalCards;
+            } catch (err) {
+                list.innerHTML = '<div class="placeholder-card">Lỗi khi tải dữ liệu: ' + err.message + '</div>';
+                summary.textContent = '';
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            offset = Math.max(0, offset - limit);
+            loadFlashcards();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            offset += limit;
+            loadFlashcards();
+        });
+
+        loadFlashcards(true);
+    </script>
+</body>
+</html>

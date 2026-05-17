@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng xếp hạng streak - AI Learning Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-900">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">Bảng xếp hạng streak</h1>
+                <p class="text-sm text-slate-600">Top 10 người dùng có chuỗi học liên tiếp cao nhất. Mỗi ngày Top 10 nhận flashcards phần thưởng ngẫu nhiên (2-6 từ).</p>
+            </div>
+            <div class="space-x-3">
+                <a href="/home" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">Trang chính</a>
+                <a href="/lesson" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 text-slate-800 hover:bg-slate-300 transition">Tới bài học</a>
+            </div>
+        </div>
+
+        <div class="bg-white shadow rounded-xl p-6 mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">🏅</span>
+                <div>
+                    <h2 class="text-xl font-semibold">Phần thưởng flashcards</h2>
+                    <p class="text-sm text-slate-600">Top 10 người học xuất sắc nhận flashcards từ vựng ngẫu nhiên (2-6 từ/ngày) để ôn lại nhanh. Admin có thể chỉnh sửa thủ công.</p>
+                </div>
+            </div>
+            <div id="rewardMessage" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-700"></div>
+            <div id="flashcardsContainer" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        </div>
+
+        <div class="bg-white shadow rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-semibold">Top 10 Streak</h2>
+                    <p class="text-sm text-slate-600">Xếp hạng theo điểm streak. Mỗi hoạt động trong vòng 5 tiếng được cộng +10 điểm, đủ 100 điểm sẽ nhận flashcard ngẫu nhiên.</p>
+                </div>
+                <span id="myRankBadge" class="text-sm font-semibold text-blue-600"></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left border-separate border-spacing-y-2">
+                    <thead>
+                        <tr class="border-b border-slate-200">
+                            <th class="py-3 px-4 text-sm text-slate-500">#</th>
+                            <th class="py-3 px-4 text-sm text-slate-500">Tên đăng nhập</th>
+                            <th class="py-3 px-4 text-sm text-slate-500">Điểm streak</th>
+                            <th class="py-3 px-4 text-sm text-slate-500">Bài học</th>
+                            <th class="py-3 px-4 text-sm text-slate-500">Cập nhật</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const ten_dang_nhap = localStorage.getItem('ten_dang_nhap');
+            const id_nguoi_dung = localStorage.getItem('id_nguoi_dung');
+            const vai_tro = localStorage.getItem('vai_tro');
+
+            if (!ten_dang_nhap || !id_nguoi_dung) {
+                window.location.href = '/login';
+                return;
+            }
+
+            await fetch('/api/leaderboard/reward_top', { method: 'POST' });
+
+            const response = await fetch('/api/leaderboard/top');
+            const body = await response.json();
+            const topUsers = body.top || [];
+            const tableBody = document.getElementById('leaderboardTable');
+            const rewardMessage = document.getElementById('rewardMessage');
+            const flashcardsContainer = document.getElementById('flashcardsContainer');
+            const myRankBadge = document.getElementById('myRankBadge');
+
+            let myRank = null;
+            topUsers.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.className = 'bg-slate-50 rounded-2xl mb-2';
+                if (String(user.id_nguoi_dung) === String(id_nguoi_dung)) {
+                    row.className += ' bg-blue-50 ring-1 ring-blue-200';
+                    myRank = index + 1;
+                }
+
+                row.innerHTML = `
+                    <td class="py-4 px-4 font-medium text-slate-700">${index + 1}</td>
+                    <td class="py-4 px-4 text-slate-700">${user.ten_dang_nhap}</td>
+                    <td class="py-4 px-4 font-semibold text-blue-600">${user.streak_points || user.streak_count || 0}</td>
+                    <td class="py-4 px-4 text-slate-700">${user.total_baihoc || 0}</td>
+                    <td class="py-4 px-4 text-slate-500">${user.last_streak_date || '-'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            if (myRank) {
+                rewardMessage.textContent = `Xin chúc mừng ${ten_dang_nhap}! Bạn đang ở vị trí #${myRank} trong Top 10 streak và được tặng bộ flashcards từ vựng.`;
+                myRankBadge.textContent = `Vị trí của bạn: #${myRank}`;
+            } else {
+                rewardMessage.textContent = `Bạn chưa nằm trong Top 10 streak. Hãy tiếp tục học mỗi ngày để nhận flashcards phần thưởng!`;
+            }
+
+            const rewardResponse = await fetch(`/api/rewards/${id_nguoi_dung}`);
+            const rewardBody = await rewardResponse.json();
+            const flashcards = (rewardBody.rewards && rewardBody.rewards.length > 0)
+                ? rewardBody.rewards.map(item => ({ en: item.tu_vung, vn: item.y_nghia }))
+                : [
+                    {en: 'practice', vn: 'thực hành'},
+                    {en: 'vocabulary', vn: 'từ vựng'},
+                    {en: 'confidence', vn: 'tự tin'},
+                    {en: 'review', vn: 'ôn tập'},
+                    {en: 'progress', vn: 'tiến bộ'},
+                    {en: 'challenge', vn: 'thử thách'},
+                ];
+
+            flashcards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'rounded-3xl border border-slate-200 bg-slate-50 p-5 shadow-sm';
+                cardElement.innerHTML = `
+                    <div class="text-sm uppercase tracking-[0.2em] text-slate-400 mb-2">Flashcard</div>
+                    <div class="text-2xl font-bold text-slate-900 mb-1">${card.en}</div>
+                    <div class="text-slate-600">${card.vn}</div>
+                `;
+                flashcardsContainer.appendChild(cardElement);
+            });
+        });
+    </script>
+</body>
+
+</html>

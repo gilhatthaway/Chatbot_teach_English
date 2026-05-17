@@ -119,6 +119,45 @@
             color: #065f46;
             border: 1px solid #6ee7b7;
         }
+
+        .notification-panel {
+            background: white;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 18px;
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+            padding: 20px;
+            max-width: 520px;
+            margin: 16px auto;
+        }
+
+        .notification-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 16px;
+        }
+
+        .notification-item strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .notification-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .notification-actions button {
+            background: #e2e8f0;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #0f172a;
+            font-size: 0.9rem;
+        }
         
         .input-focus:focus {
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
@@ -159,26 +198,78 @@
         <!-- Chat Container -->
         <div class="max-w-4xl mx-auto chat-container rounded-2xl shadow-2xl overflow-hidden">
             <!-- Chat Header -->
-            <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4 text-white flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                        <span class="text-xl">🤖</span>
+            <div class="bg-gradient-to-r from-sky-500 to-blue-600 p-4 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                            <span class="text-xl">🤖</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold">AI Teacher 😎</h3>
+                            <p class="text-sm text-blue-100">Đang hoạt động</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-semibold">AI Teacher 😎</h3>
-                        <p class="text-sm text-blue-100">Đang hoạt động</p>
+
+                    <div class="flex items-center space-x-3">
+                        <button id="notificationBtn" class="relative bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded-lg text-sm shadow-md transition">
+                            🔔
+                            <span id="chatNotificationBadge" class="hidden absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">0</span>
+                        </button>
+
+                        <a id="flashcardsBtn" href="/flashcards" class="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-medium text-slate-900 bg-white shadow-md transition" style="border:2px solid #60a5fa;">
+                            🎁 Flashcards
+                        </a>
+
+                        <img id="chatAvatar" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow" alt="avatar">
                     </div>
                 </div>
-                <div class="flex items-center space-x-3">
-                    <img id="chatAvatar" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow" alt="avatar">
 
+                <div class="flex items-center justify-end space-x-3 mt-3">
                     <span class="text-sm font-medium text-white" id="usernameDisplay">User</span>
-
+                    <button id="historyBtn" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-3 py-1 rounded-lg text-sm shadow-md transition">
+                        Lịch sử
+                    </button>
                     <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm shadow-md transition">
-        Đăng xuất
-    </button>
+                        Đăng xuất
+                    </button>
                 </div>
+            </div>
 
+            <div id="chatHistoryPanel" class="hidden bg-slate-50 border-t border-slate-200 p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h4 class="font-semibold text-slate-900">Lịch sử trò chuyện</h4>
+                        <p class="text-sm text-slate-500">Xem lại các phiên chat trước.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="deleteHistoryBtn" class="text-sm text-rose-600 hover:text-rose-800">Xóa lịch sử chat</button>
+                        <button id="editHistoryBtn" class="text-sm text-indigo-600 hover:text-indigo-800">Chỉnh sửa</button>
+                        <button id="closeHistoryBtn" class="text-sm text-slate-600 hover:text-slate-900">Đóng</button>
+                    </div>
+                </div>
+                <div id="historyList" class="space-y-3 max-h-60 overflow-y-auto text-slate-700">
+                    <div class="text-sm text-slate-500">Đang tải lịch sử...</div>
+                </div>
+                <div id="historyEditArea" class="mt-3 hidden">
+                    <textarea id="historyJsonEditor" class="w-full h-40 border rounded p-2" placeholder='[]'></textarea>
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button id="cancelEditHistoryBtn" class="px-3 py-1 bg-slate-200 rounded">Hủy</button>
+                        <button id="saveEditHistoryBtn" class="px-3 py-1 bg-emerald-600 text-white rounded">Lưu thay đổi</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chatNotificationPanel" class="hidden notification-panel">
+                <div class="notification-actions">
+                    <div>
+                        <strong>Thông báo AI</strong>
+                        <p class="text-sm text-slate-500">Các tin nhắn mới được giữ nguyên, số sẽ ẩn khi bạn mở.</p>
+                    </div>
+                    <button id="closeChatNotificationBtn">Đóng</button>
+                </div>
+                <div id="chatNotificationList" class="notification-items">
+                    <div class="notification-item">Đang tải...</div>
+                </div>
             </div>
 
             <!-- Chat Messages -->
@@ -230,8 +321,10 @@
         const messageInput = document.getElementById('messageInput');
         const chatForm = document.getElementById('chatForm');
         const typingIndicator = document.getElementById('typingIndicator');
+        let sessionChatHistory = [];
+        let currentUserId = null;
 
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
             const username = localStorage.getItem("ten_dang_nhap");
             const id_nguoi_dung = localStorage.getItem("id_nguoi_dung");
             const role = localStorage.getItem("role") || "Người dùng";
@@ -242,6 +335,8 @@
                 return;
             }
 
+            currentUserId = parseInt(id_nguoi_dung);
+
             // Nếu đã login, hiển thị username
             document.getElementById("usernameDisplay").textContent = username;
             // Load avatar từ localStorage
@@ -250,6 +345,11 @@
                 document.getElementById("chatAvatar").src = savedAvatar;
             }
 
+// Load lịch sử chat từ server và hiển thị luôn
+            await loadChatHistoryFromServer();
+
+            // Định kỳ lưu lịch sử (mỗi 30 giây)
+            setInterval(saveChatHistoryToServer, 30000);
         });
 
         // Xử lý logout
@@ -294,6 +394,17 @@
 
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            if (isUser) {
+                sessionChatHistory.push({ user: message, ai: '', timestamp: new Date().toLocaleString() });
+            } else {
+                const last = sessionChatHistory[sessionChatHistory.length - 1];
+                if (last && !last.ai) {
+                    last.ai = message;
+                } else {
+                    sessionChatHistory.push({ user: '', ai: message, timestamp: new Date().toLocaleString() });
+                }
+            }
         }
 
         function showTypingIndicator() {
@@ -347,11 +458,226 @@
             }
         });
 
+        // ===== History actions: load / delete / edit =====
+        async function loadChatHistoryFromServer() {
+            if (!currentUserId) return;
+            try {
+                const res = await fetch(`/api/user/ai_chat_history/${currentUserId}`);
+                const data = await res.json();
+                if (data.status === 'success' && data.history && data.history.length > 0) {
+                    // Load từ server vào sessionChatHistory
+                    sessionChatHistory = data.history.map(h => ({
+                        user: h.user || '',
+                        ai: h.ai || '',
+                        timestamp: h.timestamp || new Date().toLocaleString()
+                    }));
+                    // Render lên UI
+                    chatMessages.innerHTML = '';
+                    sessionChatHistory.forEach(item => {
+                        if (item.user) addMessage(item.user, true);
+                        if (item.ai) addMessage(item.ai, false);
+                    });
+                    // Chuẩn bị sẵn lịch sử để xem trong bảng lịch sử
+                    loadChatHistory();
+                } else {
+                    chatMessages.innerHTML = '<div class="text-sm text-slate-500">Chưa có lịch sử chat trước đó. Bắt đầu trò chuyện ngay nhé!</div>';
+                }
+            } catch (err) {
+                console.log('Lưu ý: Không thể tải lịch sử chat từ server');
+                chatMessages.innerHTML = '<div class="text-sm text-slate-500">Không thể tải lịch sử chat từ server.</div>';
+            }
+        }
+
+        async function saveChatHistoryToServer() {
+            if (!currentUserId || !sessionChatHistory.length) return;
+            try {
+                await fetch(`/api/user/ai_chat_history/${currentUserId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history: sessionChatHistory })
+                });
+            } catch (err) {
+                console.log('Lưu ý: Không thể lưu lịch sử chat lên server');
+            }
+        }
+
+        function loadChatHistory() {
+            const list = document.getElementById('historyList');
+            const items = sessionChatHistory || [];
+            if (!items.length) {
+                list.innerHTML = '<div class="text-sm text-slate-500">Chưa có lịch sử chat. Mọi cuộc hội thoại sẽ được lưu và hiển thị tại đây.</div>';
+                return;
+            }
+            list.innerHTML = items.map(it => `
+                <div class="p-3 mb-3 bg-white rounded-2xl shadow-sm border border-slate-200">
+                    <div class="text-xs text-slate-400 mb-2">${it.timestamp || ''}</div>
+                    <div class="text-sm text-slate-800 mb-1"><strong>Bạn:</strong> ${it.user || '<span class="text-slate-400">(không có nội dung)</span>'}</div>
+                    <div class="text-sm text-slate-700"><strong>AI:</strong> ${it.ai || '<span class="text-slate-400">(chưa có phản hồi)</span>'}</div>
+                </div>
+            `).join('');
+        }
+
+        function deleteChatHistory() {
+            if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử chat trên server?')) return;
+            if (!currentUserId) return;
+            fetch(`/api/user/ai_chat_history/${currentUserId}`, { method: 'DELETE' }).then(() => {
+                sessionChatHistory = [];
+                chatMessages.innerHTML = '';
+                document.getElementById('historyList').innerHTML = '<div class="text-sm text-slate-500">Lịch sử đã được xóa.</div>';
+            }).catch(err => alert('Lỗi xóa: ' + err.message));
+        }
+
+        function toggleEditHistory(show) {
+            const area = document.getElementById('historyEditArea');
+            if (show === undefined) show = area.classList.contains('hidden');
+            if (show) {
+                loadChatHistoryForEdit();
+                area.classList.remove('hidden');
+            } else area.classList.add('hidden');
+        }
+
+        async function loadChatHistoryForEdit() {
+            const editor = document.getElementById('historyJsonEditor');
+            editor.value = JSON.stringify(sessionChatHistory || [], null, 2);
+        }
+
+        async function saveEditedChatHistory() {
+            const editor = document.getElementById('historyJsonEditor');
+            try {
+                const parsed = JSON.parse(editor.value || '[]');
+                if (!Array.isArray(parsed)) throw new Error('Dữ liệu lịch sử phải là một mảng.');
+                sessionChatHistory = parsed.map(item => ({
+                    user: item.user || '',
+                    ai: item.ai || '',
+                    timestamp: item.timestamp || new Date().toLocaleString()
+                }));
+                alert('Lịch sử đã được cập nhật và sẽ lưu lên server.');
+                toggleEditHistory(false);
+                loadChatHistory();
+                saveChatHistoryToServer();
+            } catch (err) {
+                alert('JSON không hợp lệ hoặc định dạng không đúng.');
+            }
+        }
+
+        const historyBtn = document.getElementById('historyBtn');
+        const closeBtn = document.getElementById('closeHistoryBtn');
+        const deleteBtn = document.getElementById('deleteHistoryBtn');
+        const editBtn = document.getElementById('editHistoryBtn');
+        const cancelBtn = document.getElementById('cancelEditHistoryBtn');
+        const saveBtn = document.getElementById('saveEditHistoryBtn');
+
+        if (historyBtn) {
+            historyBtn.addEventListener('click', () => {
+                const panel = document.getElementById('chatHistoryPanel');
+                panel.classList.toggle('hidden');
+                if (!panel.classList.contains('hidden')) loadChatHistory();
+            });
+        }
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                const panel = document.getElementById('chatHistoryPanel');
+                if (panel) panel.classList.add('hidden');
+                toggleEditHistory(false);
+            });
+        }
+        if (deleteBtn) deleteBtn.addEventListener('click', deleteChatHistory);
+        if (editBtn) editBtn.addEventListener('click', () => toggleEditHistory(true));
+        if (cancelBtn) cancelBtn.addEventListener('click', () => toggleEditHistory(false));
+        if (saveBtn) saveBtn.addEventListener('click', saveEditedChatHistory);
+
         // Enter để gửi tin nhắn
+        async function loadChatNotifications() {
+            const id_nguoi_dung = localStorage.getItem('id_nguoi_dung');
+            if (!id_nguoi_dung) return;
+            const seenKey = `chatNotificationsSeen_${id_nguoi_dung}`;
+            try {
+                const res = await fetch(`/api/user/notifications/${parseInt(id_nguoi_dung)}`);
+                const data = await res.json();
+                const badge = document.getElementById('chatNotificationBadge');
+                const list = document.getElementById('chatNotificationList');
+                const seen = localStorage.getItem(seenKey) === 'true';
+                if (data.status === 'success') {
+                    const items = data.notifications || [];
+                    if (items.length && !seen) {
+                        badge.textContent = items.length;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                    if (!items.length) {
+                        list.innerHTML = '<div class="notification-item">Không có thông báo mới.</div>';
+                        return;
+                    }
+                    list.innerHTML = items.map(item => `
+                        <div class="notification-item">
+                            <strong>${item.title}</strong>
+                            <div>${item.message}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    badge.classList.add('hidden');
+                    list.innerHTML = '<div class="notification-item">Không tải được thông báo.</div>';
+                }
+            } catch (error) {
+                console.error('Lỗi tải thông báo chat:', error);
+                document.getElementById('chatNotificationList').innerHTML = '<div class="notification-item">Lỗi tải thông báo.</div>';
+            }
+        }
+
+        document.getElementById('notificationBtn').addEventListener('click', () => {
+            const panel = document.getElementById('chatNotificationPanel');
+            const id_nguoi_dung = localStorage.getItem('id_nguoi_dung');
+            const seenKey = `chatNotificationsSeen_${id_nguoi_dung}`;
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                localStorage.setItem(seenKey, 'true');
+                document.getElementById('chatNotificationBadge').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('closeChatNotificationBtn').addEventListener('click', () => {
+            document.getElementById('chatNotificationPanel').classList.add('hidden');
+        });
+
+        loadChatNotifications();
+        // Auto-refresh notifications every 5 seconds
+        setInterval(loadChatNotifications, 5000);
         messageInput.focus();
         messageInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') chatForm.dispatchEvent(new Event('submit'));
         });
+        // --- Socket.IO client example (for messaging / group chat) ---
+        (function initSocketIO(){
+            const script = document.createElement('script');
+            script.src = 'https://cdn.socket.io/4.6.1/socket.io.min.js';
+            script.onload = () => {
+                try {
+                    const socket = io(location.origin, { transports: ['websocket'] });
+                    socket.on('connect', () => {
+                        console.log('Socket connected', socket.id);
+                        // subscribe to private channel
+                        if (currentUserId) {
+                            socket.on(`private_message_${currentUserId}`, (payload) => {
+                                addMessage(`(Tin nhắn) ${payload.content}`, false);
+                            });
+                        }
+                        // listen group messages
+                        socket.on('group_message', (payload) => {
+                            addMessage(`(Group ${payload.group_id}) ${payload.content}`, false);
+                        });
+                    });
+
+                    // expose helper to send socket message from console
+                    window.sendSocketTest = (txt, toUserId=null, groupId=null) => {
+                        socket.emit('send_message', { sender_id: currentUserId, receiver_id: toUserId, group_id: groupId, content: txt });
+                    }
+                } catch (e) {
+                    console.warn('Socket.IO init failed', e);
+                }
+            };
+            document.head.appendChild(script);
+        })();
     </script>
 </body>
 

@@ -26,7 +26,7 @@ const ChatView = ({ onBack, onLogout, userId = 1 }) => {
       if (history && history.length > 0) {
         const formattedMessages = history.map((msg, index) => ({
           id: index,
-          text: msg.text || msg.noi_dung || "",
+          text: msg.text || msg.noi_dung || msg.user || msg.ai || "",
           sender: msg.sender === 'user' ? 'user' : msg.role === 'user' ? 'user' : 'bot'
         }));
         // Giữ tin nhắn khởi tạo nếu không có lịch sử
@@ -38,8 +38,6 @@ const ChatView = ({ onBack, onLogout, userId = 1 }) => {
       console.log('Không thể tải lịch sử chat (có thể server chưa khởi động)');
     }
   };
-
-  const handleSend = async () => {
     if (inputText.trim() && !loading) {
       const userMessage = inputText.trim();
       

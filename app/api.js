@@ -112,10 +112,16 @@ export const registerUser = async (ten_dang_nhap, email, mat_khau) => {
  * @param {number} limit - Số tin nhắn lấy (mặc định 5)
  * @returns {Promise} - Danh sách lịch sử chat
  */
+/**
+ * GET CHAT HISTORY - Lấy lịch sử chat
+ * @param {number} id_nguoi_dung - ID người dùng
+ * @param {number} limit - Số tin nhắn lấy (mặc định 5)
+ * @returns {Promise} - Danh sách lịch sử chat
+ */
 export const getChatHistory = async (id_nguoi_dung, limit = 5) => {
   try {
     const response = await fetch(
-      `${BASE_URL}/chat/history/${id_nguoi_dung}?limit=${limit}`,
+      `${BASE_URL}/api/user/ai_chat_history/${id_nguoi_dung}?limit=${limit}`,
       {
         method: 'GET',
         headers: {
@@ -129,7 +135,7 @@ export const getChatHistory = async (id_nguoi_dung, limit = 5) => {
     }
 
     const data = await response.json();
-    return data;
+    return data.history || [];
   } catch (error) {
     console.error('❌ Lỗi khi lấy lịch sử chat:', error);
     throw error;
@@ -137,12 +143,6 @@ export const getChatHistory = async (id_nguoi_dung, limit = 5) => {
 };
 
 /**
- * GENERATE LESSON - Tạo bài học từ AI
- * @param {number} id_nguoi_dung - ID người dùng
- * @param {string} topic - Chủ đề bài học
- * @returns {Promise}
- */
-export const generateLesson = async (id_nguoi_dung, topic) => {
   try {
     const response = await fetch(
       `${BASE_URL}/generate/lesson/${encodeURIComponent(topic)}`,

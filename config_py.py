@@ -5,7 +5,7 @@ from save_mysql import *
 def add_admin_first(ten_dang_nhap, email, mat_khau, vai_tro="admin"):
     connection = connect_to_mysql()
     if connection is None:
-        return False, "❌ Lỗi kết nối CSDL"
+        return False, "[ERROR] Connection failed"
 
     try:
         cursor = connection.cursor()
@@ -17,16 +17,15 @@ def add_admin_first(ten_dang_nhap, email, mat_khau, vai_tro="admin"):
         connection.commit()
 
         if cursor.rowcount == 0:
-            return False, f"⚠️ User '{ten_dang_nhap}' hoặc email '{email}' đã tồn tại, bỏ qua."
+            return False, f"[WARN] User '{ten_dang_nhap}' or email '{email}' exists, skipped."
         else:
-            return True, f"✅ Thêm admin '{ten_dang_nhap}' thành công!"
+            return True, f"[OK] Added admin '{ten_dang_nhap}' successfully!"
     except Error as e:
-        return False, f"❌ Lỗi khi thêm user: {e}"
+        return False, f"[ERROR] Failed to add user: {e}"
     finally:
         if connection.is_connected():
             cursor.close()
             connection.close()
-            print("🔌 Đã đóng kết nối MySQL.")
 
 def startup():
     create_database()
@@ -36,10 +35,16 @@ def startup():
     create_table_ai_chat()
     create_table_bai_kiem_tra()
     create_table_lich_su_chat()
+    create_table_flashcard_rewards()
+    create_table_quiz_documents()
+    create_table_quizzes()
+    create_table_quiz_questions()
+    create_table_quiz_results()
     create_table_xac_thuc_email()
     create_table_otp_quen_mat_khau()
     add_admin_first("admin", "admin@gmail.com", "123")
-    print("✅ Database và bảng đã được khởi tạo, admin mặc định đã được thêm.")
+    print("[OK] Database and tables initialized.")
     # show_all_users()
 
-# startup()
+if __name__ == "__main__":
+    startup()

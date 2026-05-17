@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Messages</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-6">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <div class="bg-white rounded p-4 shadow">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 class="text-2xl font-semibold">Messaging</h1>
+          <div class="text-sm text-gray-600">Send direct messages or group chat updates.</div>
+        </div>
+        <a href="/groups" class="text-sm text-blue-600 hover:underline">Browse groups</a>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="md:col-span-2 space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Direct message user ID</label>
+            <input id="toUser" placeholder="User ID" class="w-full p-2 border rounded" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Or send to group ID</label>
+            <input id="groupId" placeholder="Group ID" class="w-full p-2 border rounded" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Message</label>
+            <textarea id="msgText" placeholder="Type your message" class="w-full p-2 border rounded h-28"></textarea>
+          </div>
+          <div class="flex gap-3">
+            <button id="sendBtn" class="px-4 py-2 bg-blue-600 text-white rounded">Send HTTP</button>
+            <button id="sendSocketBtn" class="px-4 py-2 bg-indigo-600 text-white rounded">Send Socket</button>
+            <button id="loadHistory" class="px-4 py-2 bg-gray-200 rounded">Load history</button>
+          </div>
+        </div>
+        <div class="bg-gray-50 p-3 rounded border">
+          <h2 class="font-semibold mb-3">Group discovery</h2>
+          <div id="groupsList" class="space-y-3"></div>
+          <div class="mt-4">
+            <h3 class="font-semibold">Create a new group</h3>
+            <input id="newGroupName" placeholder="Group name" class="w-full p-2 border rounded mb-2" />
+            <textarea id="newGroupDesc" placeholder="Description" class="w-full p-2 border rounded h-24"></textarea>
+            <button id="createGroupBtn" class="mt-2 w-full px-4 py-2 bg-green-600 text-white rounded">Create group</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold mb-2">Messages log</h2>
+        <div id="log" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    const socket = io(location.origin, { transports: ['websocket'] });
+    const currentUserId = parseInt(localStorage.getItem('id_nguoi_dung')) || 0;
+    const params = new URLSearchParams(location.search);
+    const selectedGroupId = params.get('group_id');
+    const groupsList = document.getElementById('groupsList');
+    const log = document.getElementById('log');
+
+    function appendLog(html){
+      const div = document.createElement('div');
+      div.className = 'p-3 rounded border bg-white';
+      div.innerHTML = html;
+      log.prepend(div);
+    }
+
+    function joinGroupRoom(groupId){
+      if(!groupId || !currentUserId) return;
+      socket.emit('join_group', { group_id: parseInt(groupId), user_id: currentUserId });
+      appendLog(`<span class="text-slate-500">Joined group socket room ${groupId}</span>`);
+    }
+
+    socket.on('connect', ()=> appendLog('Socket connected.'));
+    socket.on('group_message', payload => {
+      appendLog(`<strong>Group ${payload.group_id}</strong>: ${payload.content}`);
+    });
+    socket.on(`private_message_${currentUserId}`, payload => {
+      appendLog(`<strong>Private from ${payload.sender_id}</strong>: ${payload.content}`);
+    });
+
+    async function refreshGroups(){
+      const res = await fetch('/api/groups');
+      const j = await res.json();
+      groupsList.innerHTML = '';
+      if(j.status === 'success'){
+        j.groups.forEach(g => {
+          const item = document.createElement('div');
+          item.className = 'p-3 rounded border bg-white';
+          item.innerHTML = `<div class="font-semibold">${g.name} <span class="text-xs text-gray-500">(#${g.id_group})</span></div><div class="text-sm text-gray-600">${g.description || 'No description'}</div><div class="text-xs text-gray-500 mt-2">Owner: ${g.owner_name || 'unknown'} • Members: ${g.member_count}</div><div class="mt-3 flex gap-2"><button data-id="${g.id_group}" class="join-btn px-3 py-1 rounded bg-blue-600 text-white">Join</button><button data-group="${g.id_group}" class="chat-btn px-3 py-1 rounded bg-gray-200">Chat</button></div>`;
+          groupsList.appendChild(item);
+        });
+      } else {
+        groupsList.innerHTML = '<div class="text-sm text-red-600">Failed to load groups.</div>';
+      }
+    }
+
+    groupsList.addEventListener('click', async (event) => {
+      if(event.target.matches('.join-btn')){
+        const groupId = event.target.dataset.id;
+        const res = await fetch(`/api/groups/${groupId}/join`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: currentUserId}) });
+        const j = await res.json();
+        appendLog(j.status === 'success' ? `Joined group ${groupId}` : `Join failed: ${j.message}`);
+      }
+      if(event.target.matches('.chat-btn')){
+        const groupId = event.target.dataset.group;
+        document.getElementById('groupId').value = groupId;
+        appendLog(`Group selected: ${groupId}`);
+      }
+    });
+
+    document.getElementById('createGroupBtn').addEventListener('click', async () => {
+      const name = document.getElementById('newGroupName').value.trim();
+      const description = document.getElementById('newGroupDesc').value.trim();
+      if(!name) return alert('Enter a group name');
+      const res = await fetch('/api/groups/create', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ owner_id: currentUserId, name, description }) });
+      const j = await res.json();
+      appendLog(j.status === 'success' ? `Created group ${j.group_id}` : `Create failed: ${j.message}`);
+      if(j.status === 'success'){
+        document.getElementById('newGroupName').value = '';
+        document.getElementById('newGroupDesc').value = '';
+        refreshGroups();
+      }
+    });
+
+    document.getElementById('sendBtn').addEventListener('click', async ()=>{
+      const toUser = document.getElementById('toUser').value || null;
+      const groupId = document.getElementById('groupId').value || null;
+      const content = document.getElementById('msgText').value || '';
+      if(!content.trim()) return;
+      const payload = { sender_id: currentUserId, content };
+      if(toUser) payload.receiver_id = parseInt(toUser);
+      if(groupId) payload.group_id = parseInt(groupId);
+      const res = await fetch('/api/messages/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const j = await res.json();
+      appendLog(j.status === 'success' ? `<strong>Sent</strong>: ${content}` : `<span class="text-red-600">Failed: ${j.message}</span>`);
+    });
+
+    document.getElementById('sendSocketBtn').addEventListener('click', ()=>{
+      const toUser = document.getElementById('toUser').value || null;
+      const groupId = document.getElementById('groupId').value || null;
+      const content = document.getElementById('msgText').value || '';
+      if(!content.trim()) return;
+      socket.emit('send_message', { sender_id: currentUserId, receiver_id: toUser?parseInt(toUser):null, group_id: groupId?parseInt(groupId):null, content });
+      appendLog(`Socket emit: ${content}`);
+    });
+
+    document.getElementById('loadHistory').addEventListener('click', async ()=>{
+      const toUser = document.getElementById('toUser').value || null;
+      const groupId = document.getElementById('groupId').value || null;
+      if(groupId){
+        const res = await fetch(`/api/messages/history?group_id=${encodeURIComponent(groupId)}&limit=200`);
+        const j = await res.json();
+        if(j.status === 'success'){
+          j.messages.forEach(m => appendLog(`<strong>${m.sender_id}</strong>: ${m.content}`));
+        }
+      } else if(toUser){
+        const res = await fetch(`/api/messages/history?user_a=${currentUserId}&user_b=${encodeURIComponent(toUser)}&limit=200`);
+        const j = await res.json();
+        if(j.status === 'success'){
+          j.messages.forEach(m => appendLog(`<strong>${m.sender_id}</strong>: ${m.content}`));
+        }
+      } else {
+        appendLog('Enter a user or group to load history');
+      }
+    });
+
+    if(selectedGroupId){
+      document.getElementById('groupId').value = selectedGroupId;
+      joinGroupRoom(selectedGroupId);
+    }
+
+    refreshGroups();
+  </script>
+</body>
+</html>

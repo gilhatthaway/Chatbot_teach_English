@@ -37,7 +37,9 @@
         .bubble.right::after { right: 18px; background: #0078ff; }
 
         .bubble .text { margin-bottom: 6px; font-weight: 500; }
-        .bubble .translation { font-size: 13px; color: rgba(15,23,42,0.6); }
+        .bubble .translation { font-size: 13px; color: rgba(15,23,42,0.6); margin-bottom: 8px; }
+        .play-button { display: inline-flex; align-items: center; gap: 6px; border: none; background: rgba(59,130,246,0.12); color: #1d4ed8; padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background-color 0.2s ease, transform 0.2s ease; }
+        .play-button:hover { background: rgba(59,130,246,0.2); transform: translateY(-1px); }
 
         .msg-meta { margin-top: 6px; display: flex; gap: 8px; align-items: center; font-size: 12px; color: rgba(15,23,42,0.5); }
         .msg-meta .speaker { font-weight: 600; color: rgba(15,23,42,0.75); }
@@ -548,6 +550,7 @@
                 <div class="bubble left">
                     <div class="text">${englishText}</div>
                     ${vietnameseText ? `<div class="translation">${vietnameseText}</div>` : ''}
+                    <button onclick="speakSentence('${englishText.replace(/'/g, "\\'")}')" class="play-button">🔊 Nghe</button>
                     <div class="msg-meta"><span class="speaker">${speakerName}</span><span class="time">${time}</span></div>
                 </div>
             `;
@@ -556,6 +559,7 @@
                 <div class="bubble right">
                     <div class="text">${englishText}</div>
                     ${vietnameseText ? `<div class="translation">${vietnameseText}</div>` : ''}
+                    <button onclick="speakSentence('${englishText.replace(/'/g, "\\'")}')" class="play-button">🔊 Nghe</button>
                     <div class="msg-meta"><span class="time">${time}</span><span class="speaker">${speakerName}</span></div>
                 </div>
                 <div class="avatar user" title="${speakerName}">${initial}</div>

@@ -25,6 +25,30 @@
             animation-delay: 0.6s;
         }
         
+        .fade-in-delay-4 {
+            animation-delay: 0.8s;
+        }
+        
+        .fade-in-delay-5 {
+            animation-delay: 1s;
+        }
+        
+        .fade-in-delay-6 {
+            animation-delay: 1.2s;
+        }
+        
+        .fade-in-delay-7 {
+            animation-delay: 1.4s;
+        }
+        
+        .fade-in-delay-8 {
+            animation-delay: 1.6s;
+        }
+        
+        .fade-in-delay-9 {
+            animation-delay: 1.8s;
+        }
+        
         @keyframes fadeIn {
             to {
                 opacity: 1;
@@ -99,9 +123,19 @@
         <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-white opacity-5 rounded-full"></div>
     </div>
 
-    <!-- User Info + Logout -->
+    <!-- User Info + Logout + Notifications -->
     <div class="user-info">
-        <!-- ICON Người dùng -->
+        <button id="notificationBtn" class="relative bg-white bg-opacity-20 rounded-full p-3 hover:bg-opacity-40 transition">
+            <span class="text-xl">🔔</span>
+            <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+        <div id="notificationPanel" class="hidden absolute top-16 right-4 w-80 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50">
+            <div class="px-4 py-3 border-b border-slate-200 font-semibold">Thông báo mới</div>
+            <div id="notificationList" class="max-h-64 overflow-y-auto"></div>
+            <div class="px-4 py-3 text-right">
+                <button id="markAllReadBtn" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm">Đánh dấu đã đọc</button>
+            </div>
+        </div>
         <div id="profileBtn" class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center cursor-pointer hover:bg-opacity-30 transition">
             <img id="homeAvatar" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" class="w-6 h-6 rounded-full object-cover" alt="user"> </div>
 
@@ -166,9 +200,67 @@
                     </p>
                 </div>
             </a>
-            <!-- Button 4: Exam -->
+            <!-- Button 4: Community -->
+            <a href="/posts" class="fade-in fade-in-delay-5 flex-1 group">
+                <div class="button-hover h-full flex flex-col bg-white text-blue-600 rounded-2xl p-8 md:p-10 text-center shadow-xl hover:shadow-2xl border border-blue-100">
+                    <div class="text-4xl md:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        👥
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-bold mb-3">
+                        Cộng đồng
+                    </h2>
+                    <p class="text-blue-500 text-sm md:text-base opacity-80">
+                        Chia sẻ bài viết, bình luận với cộng đồng
+                    </p>
+                </div>
+            </a>
 
-            <a href="http://localhost:5000/exam/take" class="fade-in fade-in-delay-5 flex-1 group block">
+            <!-- Button 5: Leaderboard -->
+            <a href="/leaderboard" class="fade-in fade-in-delay-6 flex-1 group">
+                <div class="button-hover h-full flex flex-col bg-white text-blue-600 rounded-2xl p-8 md:p-10 text-center shadow-xl hover:shadow-2xl border border-blue-100">
+                    <div class="text-4xl md:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        🏆
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-bold mb-3">
+                        Bảng xếp hạng
+                    </h2>
+                    <p class="text-blue-500 text-sm md:text-base opacity-80">
+                        Xếp hạng theo chuỗi streak và nhận flashcards
+                    </p>
+                </div>
+            </a>
+            <!-- Button 6: Quiz -->
+            <a href="/quiz/take" class="fade-in fade-in-delay-7 flex-1 group block">
+                <div class="button-hover h-full flex flex-col bg-white text-slate-900 rounded-2xl p-8 md:p-10 text-center shadow-xl hover:shadow-2xl border border-slate-100 cursor-pointer">
+                    <div class="text-4xl md:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        🎯
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-bold mb-3">
+                        Quiz
+                    </h2>
+                    <p class="text-slate-500 text-sm md:text-base opacity-80">
+                        Làm bài quiz tự động và nhận flashcards
+                    </p>
+                </div>
+            </a>
+            <!-- Button 7: Study Planner -->
+            <a href="/study_planner" class="fade-in fade-in-delay-8 flex-1 group block">
+                <div class="button-hover h-full flex flex-col bg-white text-blue-600 rounded-2xl p-8 md:p-10 text-center shadow-xl hover:shadow-2xl border border-blue-100 cursor-pointer">
+                    <div class="text-4xl md:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                        📘
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-bold mb-3">
+                        Kế hoạch học tập
+                    </h2>
+                    <p class="text-blue-500 text-sm md:text-base opacity-80">
+                        Lập mục tiêu, thời khóa biểu và ghi chú cá nhân
+                    </p>
+                </div>
+            </a>
+
+            <!-- Button 8: Exam -->
+
+            <a href="http://localhost:5000/exam/take" class="fade-in fade-in-delay-9 flex-1 group block">
 
                 <div class="button-hover h-full flex flex-col bg-white text-blue-600 rounded-2xl p-8 md:p-10 text-center shadow-xl hover:shadow-2xl border border-blue-100 cursor-pointer">
                     <div class="text-4xl md:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
@@ -184,9 +276,13 @@
 
             </a>
 
-
         </div>
 
+        <div class="mt-6 text-center">
+            <a id="adminDashboardBtn" href="/ad_user" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-indigo-600 text-white text-sm font-semibold shadow-lg hover:bg-indigo-700 transition">
+                ⚙️ Vào Admin Dashboard
+            </a>
+        </div>
 
         <!-- Additional Info -->
         <div class="fade-in fade-in-delay-3 mt-12 text-center">
@@ -215,6 +311,13 @@
             }
 
             document.getElementById("usernameDisplay").textContent = ten_dang_nhap;
+
+            const adminBtn = document.getElementById("adminDashboardBtn");
+            const vai_tro = localStorage.getItem("vai_tro");
+            if (adminBtn && vai_tro !== "admin") {
+                adminBtn.style.display = "none";
+            }
+
             //  Load avatar
             const savedAvatar = localStorage.getItem("avatar");
             if (savedAvatar) {
@@ -236,6 +339,65 @@
         document.getElementById("profileBtn").addEventListener("click", () => {
             window.location.href = "/profile";
         });
+
+        async function loadNotifications() {
+            const id_nguoi_dung = localStorage.getItem("id_nguoi_dung");
+            if (!id_nguoi_dung) return;
+            const readKey = `notificationsSeen_${id_nguoi_dung}`;
+
+            try {
+                const res = await fetch(`/api/user/notifications/${parseInt(id_nguoi_dung)}`);
+                const data = await res.json();
+                const badge = document.getElementById("notificationBadge");
+                const list = document.getElementById("notificationList");
+                const panel = document.getElementById("notificationPanel");
+                const seen = localStorage.getItem(readKey) === "true";
+
+                if (data.status === "success") {
+                    const items = data.notifications || [];
+                    if (items.length && !seen) {
+                        badge.textContent = items.length;
+                        badge.classList.remove("hidden");
+                    } else {
+                        badge.classList.add("hidden");
+                    }
+                    list.innerHTML = items.length
+                        ? items.map(item => `
+                            <div class="p-3 border-b border-slate-200 last:border-b-0">
+                                <div class="font-semibold">${item.title}</div>
+                                <div class="text-sm text-slate-600 mt-1">${item.message}</div>
+                            </div>
+                        `).join('')
+                        : '<div class="p-4 text-sm text-slate-500">Không có thông báo mới.</div>';
+                }
+            } catch (error) {
+                console.error('Lỗi tải thông báo:', error);
+            }
+        }
+
+        document.getElementById("notificationBtn").addEventListener("click", () => {
+            const panel = document.getElementById("notificationPanel");
+            const id_nguoi_dung = localStorage.getItem("id_nguoi_dung");
+            const readKey = `notificationsSeen_${id_nguoi_dung}`;
+            panel.classList.toggle("hidden");
+            if (!panel.classList.contains("hidden")) {
+                localStorage.setItem(readKey, "true");
+                document.getElementById("notificationBadge").classList.add("hidden");
+            }
+        });
+
+        document.getElementById("markAllReadBtn").addEventListener("click", () => {
+            const id_nguoi_dung = localStorage.getItem("id_nguoi_dung");
+            if (id_nguoi_dung) {
+                localStorage.setItem(`notificationsSeen_${id_nguoi_dung}`, "true");
+            }
+            document.getElementById("notificationBadge").classList.add("hidden");
+            document.getElementById("notificationList").innerHTML = '<div class="p-4 text-sm text-slate-500">Đã đánh dấu tất cả là đã đọc.</div>';
+        });
+
+        loadNotifications();
+        // Auto-refresh notifications every 5 seconds
+        setInterval(loadNotifications, 5000);
 
         // Mobile optimization
         function adjustViewport() {

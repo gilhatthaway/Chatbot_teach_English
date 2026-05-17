@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin Dashboard</title>
+    <style>
+        body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#f8fafc;color:#0f172a}
+        .container{max-width:1100px;margin:24px auto;padding:20px}
+        .header{display:flex;align-items:center;justify-content:space-between}
+        .stats{display:flex;gap:12px;margin-top:18px}
+        .card{background:white;border-radius:12px;padding:14px;box-shadow:0 10px 30px rgba(2,6,23,0.06);flex:1}
+        .users-table{width:100%;border-collapse:collapse;margin-top:16px}
+        .users-table th,.users-table td{padding:8px;border-bottom:1px solid #eef2f6;text-align:left}
+        .panel{margin-top:18px}
+        .btn{padding:8px 12px;border-radius:8px;border:none;background:#2563eb;color:white;cursor:pointer}
+        .input{padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px}
+        textarea{width:100%;min-height:220px}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p class="muted">Thống kê & quản lý người dùng — Cập nhật thời gian thực</p>
+            </div>
+            <div>
+                <button class="btn" id="refreshBtn">Làm mới</button>
+                <a href="/home" style="margin-left:8px;text-decoration:none"><button class="btn" style="background:#10b981">Về trang chủ</button></a>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="card">
+                <div><strong>Tổng người dùng</strong></div>
+                <div id="totalUsers" style="font-size:20px;margin-top:6px">—</div>
+            </div>
+            <div class="card">
+                <div><strong>Tổng bài học</strong></div>
+                <div id="totalLessons" style="font-size:20px;margin-top:6px">—</div>
+            </div>
+            <div class="card">
+                <div><strong>Tương tác AI (chat/voice)</strong></div>
+                <div id="totalAI" style="font-size:20px;margin-top:6px">—</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Danh sách người dùng</h3>
+            <input id="searchUserInput" class="input" placeholder="Tìm theo tên hoặc email" />
+            <table class="users-table" id="usersTable">
+                <thead><tr><th>ID</th><th>Tên</th><th>Email</th><th>Vai trò</th><th>Hành động</th></tr></thead>
+                <tbody id="usersTbody"><tr><td colspan="5">Đang tải...</td></tr></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h3>Quản lý kế hoạch người dùng</h3>
+            <div style="display:flex;gap:12px;margin-bottom:8px;align-items:center;">
+                <input id="adminUserId" class="input" placeholder="Nhập ID người dùng" />
+                <button class="btn" id="loadPlannerBtn">Tải kế hoạch</button>
+            </div>
+            <div>
+                <label>Planner JSON</label>
+                <textarea id="plannerEditor"></textarea>
+                <div style="margin-top:8px;display:flex;gap:8px;">
+                    <button class="btn" id="savePlannerBtn">Lưu thay đổi</button>
+                    <button class="btn" id="clearPlannerBtn" style="background:#ef4444">Xoá planner (set null)</button>
+                </div>
+                <div id="plannerStatus" style="margin-top:8px;color:#64748b"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let allUsers = [];
+
+        async function fetchSummary(){
+            try {
+                const res = await fetch('/api/admin/users/summary');
+                const d = await res.json();
+                if(d.status==='success'){
+                    allUsers = d.users || [];
+                    document.getElementById('totalUsers').textContent = d.summary.total_users || 0;
+                    document.getElementById('totalLessons').textContent = d.summary.total_lessons || 0;
+                    document.getElementById('totalAI').textContent = (d.summary.total_chats||0)+(d.summary.total_voices||0);
+                    renderUsers(allUsers);
+                } else {
+                    document.getElementById('usersTbody').innerHTML = '<tr><td colspan="5">Không tải được dữ liệu người dùng.</td></tr>';
+                }
+            } catch (err) {
+                document.getElementById('usersTbody').innerHTML = '<tr><td colspan="5">Lỗi mạng khi tải dữ liệu.</td></tr>';
+            }
+        }
+
+        function renderUsers(users){
+            const tb = document.getElementById('usersTbody');
+            if(!users.length){tb.innerHTML='<tr><td colspan="5">Không tìm thấy người dùng.</td></tr>';return}
+            tb.innerHTML = users.map(u=>`<tr><td>${u.id_nguoi_dung}</td><td>${u.ten_dang_nhap}</td><td>${u.email}</td><td>${u.vai_tro}</td><td><button class='btn' onclick='openPlanner(${u.id_nguoi_dung})'>Quản lý planner</button></td></tr>`).join('');
+        }
+
+        function filterUsers(query){
+            const normalized = (query || '').toLowerCase();
+            if(!normalized) return renderUsers(allUsers);
+            const filtered = allUsers.filter(u => {
+                return (u.ten_dang_nhap||'').toLowerCase().includes(normalized)
+                    || (u.email||'').toLowerCase().includes(normalized)
+                    || (u.vai_tro||'').toLowerCase().includes(normalized)
+                    || String(u.id_nguoi_dung).includes(normalized);
+            });
+            renderUsers(filtered);
+        }
+
+        function openPlanner(id){document.getElementById('adminUserId').value = id; loadPlanner(); window.scrollTo({top:99999,behavior:'smooth'})}
+        document.getElementById('searchUserInput').addEventListener('input', (e) => filterUsers(e.target.value));
+        document.getElementById('refreshBtn').addEventListener('click', fetchSummary);
+        document.getElementById('loadPlannerBtn').addEventListener('click', loadPlanner);
+        document.getElementById('savePlannerBtn').addEventListener('click', savePlanner);
+        document.getElementById('clearPlannerBtn').addEventListener('click', async ()=>{
+            const id = parseInt(document.getElementById('adminUserId').value);
+            if(!id) return alert('Nhập ID người dùng');
+            if(!confirm('Xác nhận xoá planner?')) return;
+            const res = await fetch(`/api/admin/user_planner/${id}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planner:null})});
+            const d = await res.json(); document.getElementById('plannerStatus').textContent = d.message || JSON.stringify(d);
+        });
+
+        async function loadPlanner(){
+            const id = parseInt(document.getElementById('adminUserId').value);
+            if(!id) return alert('Nhập ID người dùng');
+            const res = await fetch(`/api/admin/user_planner/${id}`);
+            const d = await res.json();
+            if(d.status==='success'){
+                let planner = d.data.planner;
+                if (typeof planner === 'string') {
+                    try { planner = JSON.parse(planner); } catch (e) { planner = planner; }
+                }
+                document.getElementById('plannerEditor').value = JSON.stringify(planner || {}, null, 2);
+                document.getElementById('plannerStatus').textContent = 'Đã tải';
+            } else {
+                document.getElementById('plannerEditor').value = '';
+                document.getElementById('plannerStatus').textContent = 'Không tìm thấy planner cho user.';
+            }
+        }
+        async function savePlanner(){
+            const id = parseInt(document.getElementById('adminUserId').value);
+            if(!id) return alert('Nhập ID người dùng');
+            let payload;
+            try{ payload = JSON.parse(document.getElementById('plannerEditor').value || 'null'); }catch(e){return alert('JSON không hợp lệ')}
+            const res = await fetch(`/api/admin/user_planner/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planner:payload})});
+            const d = await res.json(); document.getElementById('plannerStatus').textContent = d.message || JSON.stringify(d);
+        }
+
+        // initial
+        fetchSummary();
+        setInterval(fetchSummary,5000);
+    </script>
+</body>
+</html>

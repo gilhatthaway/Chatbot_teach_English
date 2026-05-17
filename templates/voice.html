@@ -76,6 +76,75 @@
             display: flex;
             justify-content: flex-end;
         }
+
+        .notification-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 18px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+            padding: 16px;
+            z-index: 20;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .notification-items {
+            max-height: 250px;
+            overflow-y: auto;
+            display: grid;
+            gap: 10px;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0 6px;
+        }
+
+        .notification-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px;
+            color: #334155;
+            font-size: 0.95rem;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #0f172a;
+        }
+
+        .notification-message {
+            font-size: 0.9rem;
+            color: #475569;
+        }
         
         .logo {
             display: flex;
@@ -434,11 +503,54 @@
 
                 <span class="username" id="usernameDisplay">User</span>
 
+                <button id="voiceNotificationBtn" class="logout-btn" style="position:relative;">
+                    🔔
+                    <span id="voiceNotificationBadge" class="notification-badge hidden">0</span>
+                </button>
+                <button id="voiceHistoryBtn" class="logout-btn">📜</button>
                 <button class="logout-btn" id="logoutBtn">Logout</button>
             </div>
 
         </div>
     </nav>
+
+    <div id="voiceNotificationPanel" class="notification-panel hidden">
+        <div class="panel-header">
+            <span>Thông báo AI</span>
+            <button id="closeVoiceNotificationBtn">Đóng</button>
+        </div>
+        <div id="voiceNotificationList" class="notification-items">
+            <div class="notification-item">Đang tải...</div>
+        </div>
+    </div>
+
+    <div id="voiceHistoryPanel" class="notification-panel hidden">
+        <div class="panel-header">
+            <span>Lịch sử thoại</span>
+            <div>
+                <button id="deleteVoiceHistoryBtn" class="logout-btn" style="margin-right:8px;background:#ef4444">Xóa lịch sử thoại</button>
+                <button id="editVoiceHistoryBtn" class="logout-btn" style="margin-right:8px;background:#6366f1">Chỉnh sửa</button>
+                <button id="closeVoiceHistoryBtn">Đóng</button>
+            </div>
+        </div>
+        <div id="voiceHistoryList" class="notification-items">
+            <div class="notification-item">Đang tải...</div>
+        </div>
+        <div class="panel-header" style="margin-top:12px;">
+            <span>Ghi âm cuộc gọi</span>
+            <div>
+                <button id="refreshCallsBtn" class="logout-btn" style="margin-right:8px;background:#3b82f6">Tải cuộc gọi</button>
+            </div>
+        </div>
+        <div id="callList" class="notification-items" style="margin-top:8px;"></div>
+        <div id="voiceHistoryEditArea" class="mt-3 hidden">
+            <textarea id="voiceHistoryJsonEditor" style="width:100%;height:180px;border-radius:8px;border:1px solid #e2e8f0;padding:8px"></textarea>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+                <button id="cancelEditVoiceBtn" class="logout-btn" style="background:#cbd5e1;color:#0f172a">Hủy</button>
+                <button id="saveEditVoiceBtn" class="logout-btn" style="background:#10b981">Lưu</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main content -->
     <main class="main-content">
@@ -564,6 +676,22 @@
                             this.aiResponse.textContent = `AI: "${data.bot_reply}"`;
                             this.responseArea.classList.add("show");
                             this.hideStatus();
+                            if (data.streak && data.streak.success) {
+                                if (data.streak.reward_given && data.streak.reward && data.streak.reward.length) {
+                                    const card = data.streak.reward[0];
+                                    addVoiceNotification({
+                                        title: '🎉 Nhận flashcard',
+                                        message: `Bạn đã đạt 100 điểm streak và được tặng flashcard: ${card.en} - ${card.vn}`,
+                                        type: 'streak'
+                                    });
+                                } else {
+                                    addVoiceNotification({
+                                        title: '✨ Điểm streak',
+                                        message: `Bạn vừa nhận +10 điểm streak. Tổng hiện tại: ${data.streak.streak_points}`,
+                                        type: 'streak'
+                                    });
+                                }
+                            }
                         } else {
                             this.showStatus("❌ " + data.message);
                         }
@@ -617,7 +745,322 @@
 
             // Nếu đã login, hiển thị username
             document.getElementById("usernameDisplay").textContent = username;
+            loadVoiceNotifications();
+            // Auto-refresh notifications every 5 seconds
+            setInterval(loadVoiceNotifications, 5000);
+            // initialize socket.io for WebRTC signaling
+            if (window.io) {
+                window.socket = io();
+                const uid = parseInt(localStorage.getItem('id_nguoi_dung')||0);
+                if(uid) socket.emit('register_user_socket', { user_id: uid });
+                socket.on('webrtc_offer', (d) => {
+                    // notify user about incoming call
+                    const accept = confirm('Incoming call from user ' + (d.caller_id || 'unknown') + '. Accept?');
+                    if(!accept) return;
+                    // attach to a simple handler: place offer on window for VoiceAssistant to pick up
+                    window.__incoming_offer = d;
+                    window.dispatchEvent(new Event('incoming_call'));
+                });
+                socket.on('webrtc_answer', (d) => {
+                    window.dispatchEvent(new CustomEvent('webrtc_answer', { detail: d }));
+                });
+                socket.on('webrtc_ice_candidate', (d) => {
+                    window.dispatchEvent(new CustomEvent('webrtc_ice_candidate', { detail: d }));
+                });
+            }
         });
+
+        // Expose simple call API for VoiceAssistant to use
+        window.startCall = async function(caller_id, callee_id){
+            // create call record
+            const res = await fetch('/api/calls/start', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ caller_id, callee_id }) });
+            const d = await res.json();
+            return d;
+        }
+
+        window.endCallAndUpload = async function(id_call, blob){
+            const fd = new FormData();
+            fd.append('file', blob, `call_${id_call}.webm`);
+            fd.append('id_call', id_call);
+            const res = await fetch('/api/calls/upload_recording', { method:'POST', body: fd });
+            return await res.json();
+        }
+
+                // --- Simple WebRTC call UI & logic ---
+                (function(){
+                    const container = document.createElement('div');
+                    container.style.position='fixed'; container.style.right='12px'; container.style.bottom='12px'; container.style.zIndex=9999;
+                    container.innerHTML = `<div class="p-3 bg-white rounded shadow flex gap-2 items-center"><input id="calleeIdInput" placeholder="Callee id" class="p-2 border rounded"/><button id="callBtn" class="px-3 py-2 bg-green-600 text-white rounded">Call</button><button id="hangupBtn" class="px-3 py-2 bg-red-600 text-white rounded">Hangup</button></div>`;
+                    document.body.appendChild(container);
+                    let pc = null; let localStream = null; let recorder = null; let recordedChunks = [];
+
+                    async function createPeerConnection(targetId){
+                        pc = new RTCPeerConnection();
+                        pc.onicecandidate = (e)=>{ if(e.candidate){ socket && socket.emit('webrtc_ice_candidate', { target_id: targetId, candidate: e.candidate, from: parseInt(localStorage.getItem('id_nguoi_dung')||0) }); }};
+                        pc.ontrack = (e)=>{
+                            let el = document.getElementById('remoteAudio');
+                            if(!el){ el = document.createElement('audio'); el.id='remoteAudio'; el.autoplay=true; el.controls=true; document.body.appendChild(el); }
+                            el.srcObject = e.streams[0];
+                            try{ recorder = new MediaRecorder(e.streams[0]); recordedChunks=[]; recorder.ondataavailable = ev=>{ if(ev.data.size) recordedChunks.push(ev.data); }; recorder.start(); }catch(err){}
+                        };
+                        return pc;
+                    }
+
+                        document.getElementById('callBtn').addEventListener('click', async ()=>{
+                        const callee = parseInt(document.getElementById('calleeIdInput').value||0);
+                        const caller = parseInt(localStorage.getItem('id_nguoi_dung')||0);
+                        if(!callee || !caller) return alert('Missing caller or callee id');
+                        const callRes = await startCall(caller, callee);
+                        const call_id = callRes.id_call || callRes.id || null;
+                        // store current call id for hangup/upload
+                        window.__current_call_id = call_id;
+                        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                        pc = await createPeerConnection(callee);
+                        localStream.getTracks().forEach(t=>pc.addTrack(t, localStream));
+                        const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
+                        socket && socket.emit('webrtc_offer', { caller_id: caller, callee_id: callee, sdp: offer.sdp, call_id });
+                        window.addEventListener('webrtc_answer', async (ev)=>{ const d = ev.detail; if(d && d.sdp){ try{ await pc.setRemoteDescription({ type:'answer', sdp: d.sdp }); }catch(e){} } }, { once: true });
+                    });
+
+                    document.getElementById('hangupBtn').addEventListener('click', async ()=>{
+                        if(recorder && recorder.state !== 'inactive'){ recorder.stop(); }
+                        if(pc){ try{ pc.getSenders().forEach(s=>{ try{s.track.stop();}catch(e){} }); pc.close(); }catch(e){} pc=null; }
+                        if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+                        if(recordedChunks && recordedChunks.length){ const blob = new Blob(recordedChunks, { type:'audio/webm' }); const cid = window.__current_call_id || 'unknown'; await endCallAndUpload(cid, blob); recordedChunks=[]; alert('Uploaded recording'); }
+                        window.__current_call_id = null;
+                    });
+
+                    window.addEventListener('incoming_call', async ()=>{
+                        const d = window.__incoming_offer; if(!d) return; const caller = d.caller_id;
+                        // store call id
+                        window.__current_call_id = d.call_id || null;
+                        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                        pc = await createPeerConnection(caller);
+                        localStream.getTracks().forEach(t=>pc.addTrack(t, localStream));
+                        await pc.setRemoteDescription({ type:'offer', sdp: d.sdp });
+                        const answer = await pc.createAnswer(); await pc.setLocalDescription(answer);
+                        socket && socket.emit('webrtc_answer', { caller_id: caller, callee_id: parseInt(localStorage.getItem('id_nguoi_dung')||0), sdp: answer.sdp, call_id: d.call_id });
+                    });
+
+                    window.addEventListener('webrtc_ice_candidate', async (ev)=>{ const d = ev.detail; if(!d || !d.candidate) return; try{ if(pc) await pc.addIceCandidate(d.candidate); }catch(e){} });
+                })();
+
+        async function loadVoiceNotifications() {
+            const id_nguoi_dung = localStorage.getItem('id_nguoi_dung');
+            if (!id_nguoi_dung) return;
+            try {
+                const res = await fetch(`/api/user/notifications/${parseInt(id_nguoi_dung)}`);
+                const data = await res.json();
+                const list = document.getElementById('voiceNotificationList');
+                const badge = document.getElementById('voiceNotificationBadge');
+                const seen = localStorage.getItem('voiceNotificationsSeen') === 'true';
+                if (data.status === 'success') {
+                    const items = data.notifications || [];
+                    if (items.length && !seen) {
+                        badge.textContent = items.length;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                    if (!items.length) {
+                        list.innerHTML = '<div class="notification-item">Không có thông báo mới.</div>';
+                        return;
+                    }
+                    list.innerHTML = items.map(item => `
+                        <div class="notification-item">
+                            <div class="notification-title">${item.title}</div>
+                            <div class="notification-message">${item.message}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    badge.classList.add('hidden');
+                    list.innerHTML = '<div class="notification-item">Không tải được thông báo.</div>';
+                }
+            } catch (err) {
+                console.error('Lỗi tải thông báo voice:', err);
+                document.getElementById('voiceNotificationList').innerHTML = '<div class="notification-item">Lỗi tải thông báo.</div>';
+            }
+        }
+
+        function addVoiceNotification(notification) {
+            const list = document.getElementById('voiceNotificationList');
+            const badge = document.getElementById('voiceNotificationBadge');
+            if (!list || !badge) return;
+            const itemHtml = `
+                <div class="notification-item">
+                    <div class="notification-title">${notification.title}</div>
+                    <div class="notification-message">${notification.message}</div>
+                </div>
+            `;
+            list.insertAdjacentHTML('afterbegin', itemHtml);
+            badge.textContent = '1';
+            badge.classList.remove('hidden');
+            localStorage.setItem('voiceNotificationsSeen', 'false');
+        }
+
+        function playVoiceAudio(url) {
+            if (!url) return;
+            const player = document.createElement('audio');
+            player.src = url;
+            player.controls = true;
+            player.autoplay = true;
+            player.style.display = 'none';
+            document.body.appendChild(player);
+            player.addEventListener('ended', () => player.remove());
+            player.addEventListener('error', () => {
+                alert('Không thể phát audio. Vui lòng thử lại sau.');
+                player.remove();
+            });
+        }
+
+        const voiceNotificationBtn = document.getElementById('voiceNotificationBtn');
+        const closeVoiceNotificationBtn = document.getElementById('closeVoiceNotificationBtn');
+        const voiceHistoryBtn = document.getElementById('voiceHistoryBtn');
+        const closeVoiceHistoryBtn = document.getElementById('closeVoiceHistoryBtn');
+
+        if (voiceNotificationBtn) {
+            voiceNotificationBtn.addEventListener('click', () => {
+                const panel = document.getElementById('voiceNotificationPanel');
+                if (!panel) return;
+                panel.classList.toggle('hidden');
+                if (!panel.classList.contains('hidden')) {
+                    localStorage.setItem('voiceNotificationsSeen', 'true');
+                    const badge = document.getElementById('voiceNotificationBadge');
+                    if (badge) badge.classList.add('hidden');
+                }
+            });
+        }
+
+        if (closeVoiceNotificationBtn) {
+            closeVoiceNotificationBtn.addEventListener('click', () => {
+                const panel = document.getElementById('voiceNotificationPanel');
+                if (panel) panel.classList.add('hidden');
+            });
+        }
+
+        if (voiceHistoryBtn) {
+            voiceHistoryBtn.addEventListener('click', () => {
+                const panel = document.getElementById('voiceHistoryPanel');
+                if (!panel) return;
+                panel.classList.toggle('hidden');
+                if (!panel.classList.contains('hidden')) {
+                    loadVoiceHistory();
+                }
+            });
+        }
+
+        if (closeVoiceHistoryBtn) {
+            closeVoiceHistoryBtn.addEventListener('click', () => {
+                const panel = document.getElementById('voiceHistoryPanel');
+                if (panel) panel.classList.add('hidden');
+                toggleEditVoice(false);
+            });
+        }
+
+        async function loadVoiceHistory() {
+            const id_nguoi_dung = localStorage.getItem('id_nguoi_dung');
+            if (!id_nguoi_dung) return;
+            try {
+                const res = await fetch(`/api/user/ai_voice_history/${parseInt(id_nguoi_dung)}`);
+                const data = await res.json();
+                const list = document.getElementById('voiceHistoryList');
+                if (data.status === 'success' && Array.isArray(data.history) ) {
+                    if (!data.history.length) {
+                        list.innerHTML = '<div class="notification-item">Chưa có lịch sử thoại nào.</div>';
+                        return;
+                    }
+                    list.innerHTML = data.history.map(item => `
+                        <div class="notification-item">
+                            <div class="notification-title">${item.timestamp || '---'}</div>
+                            <div class="notification-message"><strong>Bạn:</strong> ${item.user || item.tro_chuyen_user || item.message || '...'}</div>
+                            <div class="notification-message"><strong>AI:</strong> ${item.ai || item.tro_chuyen_ai || item.response || '...'}</div>
+                            ${item.audio_url ? `
+                                <div class="notification-message" style="margin-top:0.75rem;">
+                                    <audio controls src="${item.audio_url}" style="width:100%; max-width:100%;"></audio>
+                                    <button onclick="playVoiceAudio('${item.audio_url}')" class="logout-btn" style="margin-top:0.5rem;">Nghe lại</button>
+                                </div>
+                            ` : '<div class="notification-message text-sm text-slate-500">Không có audio.</div>'}
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="notification-item">Không tải được lịch sử thoại.</div>';
+                }
+            } catch (err) {
+                console.error('Lỗi tải lịch sử thoại:', err);
+                document.getElementById('voiceHistoryList').innerHTML = '<div class="notification-item">Lỗi tải lịch sử thoại.</div>';
+            }
+        }
+
+        // Delete voice history
+        async function deleteVoiceHistory() {
+            if (!confirm('Bạn có chắc muốn xóa toàn bộ lịch sử thoại?')) return;
+            const id = localStorage.getItem('id_nguoi_dung');
+            const res = await fetch(`/api/user/ai_voice_history/${parseInt(id)}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.status === 'success') {
+                document.getElementById('voiceHistoryList').innerHTML = '<div class="notification-item">Đã xóa lịch sử.</div>';
+            } else alert('Xóa thất bại');
+        }
+
+        // Edit voice history
+        function toggleEditVoice(show) {
+            const area = document.getElementById('voiceHistoryEditArea');
+            if (show === undefined) show = area.classList.contains('hidden');
+            if (show) {
+                area.classList.remove('hidden');
+                loadVoiceHistoryForEdit();
+            } else {
+                area.classList.add('hidden');
+            }
+        }
+
+        async function loadVoiceHistoryForEdit() {
+            const id = localStorage.getItem('id_nguoi_dung');
+            const res = await fetch(`/api/user/ai_voice_history/${parseInt(id)}`);
+            const data = await res.json();
+            const editor = document.getElementById('voiceHistoryJsonEditor');
+            if (data.status === 'success') editor.value = JSON.stringify(data.history || [], null, 2);
+            else editor.value = '[]';
+        }
+
+        async function saveEditedVoiceHistory() {
+            const id = localStorage.getItem('id_nguoi_dung');
+            const editor = document.getElementById('voiceHistoryJsonEditor');
+            try {
+                const parsed = JSON.parse(editor.value || '[]');
+                const res = await fetch(`/api/user/ai_voice_history/${parseInt(id)}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({history: parsed}) });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Lưu thành công');
+                    toggleEditVoice(false);
+                    loadVoiceHistory();
+                } else alert('Lưu thất bại');
+            } catch (err) { alert('JSON không hợp lệ'); }
+        }
+
+        document.getElementById('deleteVoiceHistoryBtn').addEventListener('click', deleteVoiceHistory);
+        document.getElementById('editVoiceHistoryBtn').addEventListener('click', () => toggleEditVoice(true));
+        document.getElementById('cancelEditVoiceBtn').addEventListener('click', () => toggleEditVoice(false));
+        document.getElementById('saveEditVoiceBtn').addEventListener('click', saveEditedVoiceHistory);
+        document.getElementById('refreshCallsBtn').addEventListener('click', loadUserCalls);
+
+        async function loadUserCalls(){
+            const id = localStorage.getItem('id_nguoi_dung'); if(!id) return;
+            const el = document.getElementById('callList'); el.innerHTML = '<div class="notification-item">Đang tải...</div>';
+            try{
+                const res = await fetch(`/api/calls/user/${parseInt(id)}`);
+                const j = await res.json(); if(j.status !== 'success'){ el.innerHTML = '<div class="notification-item">Lỗi tải cuộc gọi.</div>'; return; }
+                const calls = j.calls || [];
+                if(!calls.length){ el.innerHTML = '<div class="notification-item">Chưa có cuộc gọi.</div>'; return; }
+                el.innerHTML = calls.map(c=>{
+                    const started = c.created_at || c.started_at || '';
+                    const other = (c.caller_id == id) ? c.callee_id : c.caller_id;
+                    const recording = c.recording_url || c.recording || '';
+                    return `<div class="notification-item"><div class="notification-title">${started} — Với: ${other}</div><div class="notification-message">Trạng thái: ${c.status||'n/a'}</div>`+
+                        (recording? `<div style="margin-top:8px"><audio controls src="${recording}" style="width:100%"></audio><div style="margin-top:6px"><a href="${recording}" target="_blank" class="logout-btn">Tải về</a></div></div>` : `<div class="notification-message text-sm text-slate-500">Không có bản ghi</div>`) + `</div>`;
+                }).join('');
+            }catch(err){ console.error(err); el.innerHTML = '<div class="notification-item">Lỗi khi tải cuộc gọi.</div>'; }
+        }
 
         // Xử lý home button
         document.getElementById("homeBtn").addEventListener("click", () => {

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lập kế hoạch học tập</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pbG8Bb1Sj7+SgEJpXT7BvICkL5pFtMfhNfX7/3KiaVj3N8X8y6Q49y8y8o1hJm4eJG0xjA9nJk7mG1wDkGj2SQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%);
+            color: #0f172a;
+        }
+        .page-container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .page-header h1 {
+            margin: 0;
+            font-size: clamp(2rem, 2.5vw, 2.75rem);
+            line-height: 1.1;
+        }
+        .page-header p {
+            margin-top: 12px;
+            color: #475569;
+            max-width: 680px;
+        }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            padding: 0.95rem 1.3rem;
+            border-radius: 14px;
+            font-weight: 700;
+            background: #2563eb;
+            color: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 38px rgba(56, 189, 248, 0.18);
+        }
+        .planner-grid {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
+        .card {
+            grid-column: span 12;
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 22px 55px rgba(15, 23, 42, 0.06);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+        }
+        .card.small {
+            grid-column: span 6;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            letter-spacing: -.01em;
+        }
+        .section-title span {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .input, .textarea, .select {
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            padding: 14px 16px;
+            font-size: 0.95rem;
+            color: #0f172a;
+            background: #f8fafc;
+            outline: none;
+        }
+        .textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        .input:focus, .textarea:focus, .select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+        }
+        .task-list, .timeline-list, .note-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 14px;
+        }
+        .task-item, .timeline-item, .note-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 16px 18px;
+        }
+        .task-item.completed {
+            opacity: 0.76;
+            text-decoration: line-through;
+        }
+        .task-item strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            background: linear-gradient(135deg, #22c55e, #0ea5e9);
+            border-radius: 99px;
+        }
+        .small-note {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        @media (min-width: 900px) {
+            .card.wide {
+                grid-column: span 8;
+            }
+            .card.narrow {
+                grid-column: span 4;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="page-header">
+            <div>
+                <p class="small-note">Bảng điều khiển học tập</p>
+                <h1>Lập kế hoạch học tập</h1>
+                <p>Thiết lập mục tiêu, quản lý thời khóa biểu, theo dõi tiến độ và ghi chú để học tiếng Anh hiệu quả hơn.</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <button class="btn-primary" id="openStudyGoalsBtn"><i class="fa-solid fa-flag-checkered"></i> Thêm mục tiêu mới</button>
+                <button class="btn-primary" id="backHomeBtn" style="background:#0ea5e9;">🏠 Về trang chủ</button>
+            </div>
+        </div>
+
+        <div class="planner-grid">
+            <section class="card wide">
+                <div class="section-title">
+                    <h2>Mục tiêu học tập</h2>
+                    <span id="goalCount">0 mục tiêu</span>
+                </div>
+                <div class="form-row">
+                    <input id="goalTitle" class="input" type="text" placeholder="Mục tiêu (ví dụ: Học 30 từ vựng mỗi tuần)">
+                    <button class="btn-primary" id="addGoalBtn">Thêm mục tiêu</button>
+                </div>
+                <ul id="goalsList" class="task-list"></ul>
+            </section>
+
+            <section class="card narrow">
+                <div class="section-title">
+                    <h2>Tiến độ</h2>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <p class="small-note">Theo dõi hoàn thành từ các nhiệm vụ của bạn.</p>
+                <div class="progress-bar"><span id="progressBar" style="width: 0%;"></span></div>
+                <ul id="progressItems" class="task-list"></ul>
+            </section>
+
+            <section class="card wide">
+                <div class="section-title">
+                    <h2>Lịch học</h2>
+                    <span>Thiết lập thời khóa biểu</span>
+                </div>
+                <div class="form-row">
+                    <input id="scheduleTitle" class="input" type="text" placeholder="Hoạt động (ví dụ: Luyện nghe)">
+                    <input id="scheduleTime" class="input" type="text" placeholder="Thời gian / Ngày">
+                    <button class="btn-primary" id="addScheduleBtn">Thêm vào lịch</button>
+                </div>
+                <ul id="scheduleList" class="timeline-list"></ul>
+            </section>
+
+            <section class="card narrow">
+                <div class="section-title">
+                    <h2>Todo hàng ngày</h2>
+                    <span>Việc cần làm</span>
+                </div>
+                <div class="form-row">
+                    <input id="todoText" class="input" type="text" placeholder="Nhiệm vụ mới">
+                    <button class="btn-primary" id="addTodoBtn">Thêm</button>
+                </div>
+                <ul id="todoList" class="task-list"></ul>
+            </section>
+
+            <section class="card wide">
+                <div class="section-title">
+                    <h2>Ghi chú & Đánh giá</h2>
+                    <span>Ghi lại suy nghĩ và nhận xét</span>
+                </div>
+                <textarea id="notesText" class="textarea" placeholder="Viết ghi chú hoặc nhận xét của bạn..."></textarea>
+                <button class="btn-primary" id="saveNotesBtn" style="margin-top: 14px;">Lưu ghi chú</button>
+                <div id="notesSaved" class="small-note" style="margin-top: 12px; display:none;">Đã lưu ghi chú.</div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        function getStored(key) {
+            try {
+                return JSON.parse(localStorage.getItem(key) || '[]');
+            } catch (err) {
+                return [];
+            }
+        }
+        function setStored(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+
+        const goalsList = document.getElementById('goalsList');
+        const scheduleList = document.getElementById('scheduleList');
+        const todoList = document.getElementById('todoList');
+        const progressItems = document.getElementById('progressItems');
+
+        function updateGoalCount() {
+            const goals = getStored('studyGoals');
+            document.getElementById('goalCount').textContent = `${goals.length} mục tiêu`;
+        }
+        function updateProgress() {
+            const todos = getStored('studyTodos');
+            const doneCount = todos.filter(item => item.done).length;
+            const percent = todos.length ? Math.round((doneCount / todos.length) * 100) : 0;
+            document.getElementById('progressPercent').textContent = `${percent}%`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            progressItems.innerHTML = todos.slice(0, 5).map(item => `
+                <li class="task-item ${item.done ? 'completed' : ''}">
+                    <strong>${item.text}</strong>
+                    <span>${item.done ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</span>
+                </li>
+            `).join('') || '<li class="task-item">Chưa có nhiệm vụ nào.</li>';
+        }
+
+        function renderGoals() {
+            const goals = getStored('studyGoals');
+            goalsList.innerHTML = goals.map((goal, index) => `
+                <li class="task-item">
+                    <strong>${goal}</strong>
+                    <button class="btn-primary" style="margin-top:8px;" onclick="removeGoal(${index})">Xóa</button>
+                </li>
+            `).join('') || '<li class="task-item">Chưa có mục tiêu nào.</li>';
+            updateGoalCount();
+        }
+
+        function renderSchedule() {
+            const schedule = getStored('studySchedule');
+            scheduleList.innerHTML = schedule.map(item => `
+                <li class="timeline-item">
+                    <strong>${item.title}</strong>
+                    <div class="small-note">${item.time}</div>
+                </li>
+            `).join('') || '<li class="timeline-item">Chưa có lịch học nào.</li>';
+        }
+
+        function renderTodos() {
+            const todos = getStored('studyTodos');
+            todoList.innerHTML = todos.map((item, index) => `
+                <li class="task-item ${item.done ? 'completed' : ''}">
+                    <strong>${item.text}</strong>
+                    <div style="margin-top:10px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                        <button class="btn-primary" style="padding:8px 12px; font-size:0.9rem;" onclick="toggleTodo(${index})">
+                            ${item.done ? 'Hoàn tác' : 'Hoàn thành'}
+                        </button>
+                        <button class="btn-primary" style="padding:8px 12px; font-size:0.9rem; background:#64748b;">
+                            <span onclick="removeTodo(${index})">Xóa</span>
+                        </button>
+                    </div>
+                </li>
+            `).join('') || '<li class="task-item">Chưa có todo nào.</li>';
+            updateProgress();
+        }
+
+        function removeGoal(index) {
+            const goals = getStored('studyGoals');
+            goals.splice(index, 1);
+            setStored('studyGoals', goals);
+            renderGoals();
+        }
+
+        function removeTodo(index) {
+            const todos = getStored('studyTodos');
+            todos.splice(index, 1);
+            setStored('studyTodos', todos);
+            renderTodos();
+        }
+
+        function toggleTodo(index) {
+            const todos = getStored('studyTodos');
+            todos[index].done = !todos[index].done;
+            setStored('studyTodos', todos);
+            renderTodos();
+        }
+
+        document.getElementById('addGoalBtn').addEventListener('click', () => {
+            const title = document.getElementById('goalTitle').value.trim();
+            if (!title) return;
+            const goals = getStored('studyGoals');
+            goals.push(title);
+            setStored('studyGoals', goals);
+            document.getElementById('goalTitle').value = '';
+            renderGoals();
+        });
+
+        document.getElementById('addScheduleBtn').addEventListener('click', () => {
+            const title = document.getElementById('scheduleTitle').value.trim();
+            const time = document.getElementById('scheduleTime').value.trim();
+            if (!title || !time) return;
+            const schedule = getStored('studySchedule');
+            schedule.push({ title, time });
+            setStored('studySchedule', schedule);
+            document.getElementById('scheduleTitle').value = '';
+            document.getElementById('scheduleTime').value = '';
+            renderSchedule();
+        });
+
+        document.getElementById('addTodoBtn').addEventListener('click', () => {
+            const text = document.getElementById('todoText').value.trim();
+            if (!text) return;
+            const todos = getStored('studyTodos');
+            todos.push({ text, done: false });
+            setStored('studyTodos', todos);
+            document.getElementById('todoText').value = '';
+            renderTodos();
+        });
+
+        document.getElementById('saveNotesBtn').addEventListener('click', () => {
+            const notes = document.getElementById('notesText').value.trim();
+            localStorage.setItem('studyNotes', notes);
+            const saved = document.getElementById('notesSaved');
+            saved.style.display = 'block';
+            setTimeout(() => saved.style.display = 'none', 1800);
+        });
+
+        document.getElementById('openStudyGoalsBtn').addEventListener('click', () => {
+            document.getElementById('goalTitle').focus();
+        });
+
+        document.getElementById('backHomeBtn').addEventListener('click', () => {
+            window.location.href = '/home';
+        });
+
+        window.addEventListener('load', () => {
+            renderGoals();
+            renderSchedule();
+            renderTodos();
+            const notes = localStorage.getItem('studyNotes') || '';
+            document.getElementById('notesText').value = notes;
+        });
+    </script>
+</body>
+</html>

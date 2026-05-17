@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Admin Notifications</title>
+  </head>
+  <body>
+    <h1>Notification Settings</h1>
+    <form method="post">
+      <label>Admin email:<br>
+        <input type="email" name="admin_email" value="{{ settings.get('admin_email', '') }}" />
+      </label>
+      <br><br>
+      <label>Admin webhook URL (Slack/Teams):<br>
+        <input type="text" name="admin_webhook" value="{{ settings.get('admin_webhook', '') }}" style="width:480px" />
+      </label>
+      <br><br>
+      <button type="submit">Save</button>
+    </form>
+    <p><a href="/admin/dashboard">Back to dashboard</a></p>
+  </body>
+</html>

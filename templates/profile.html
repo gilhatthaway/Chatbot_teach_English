@@ -66,6 +66,12 @@
                 <!-- USER INFO -->
                 <h2 class="text-2xl font-bold mt-3" id="profileUsername">User Name</h2>
                 <p class="text-gray-600" id="profileEmail">example@gmail.com</p>
+                    <div class="mt-4 flex items-center gap-3">
+                        <input id="profileTargetId" placeholder="Target user id (for follow/block)" class="p-2 border rounded" />
+                        <button id="followBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Follow</button>
+                        <button id="blockBtn" class="px-3 py-2 bg-red-600 text-white rounded">Block</button>
+                    </div>
+                <div class="mt-4 text-sm text-gray-600" id="streakInfo">Đang tải thông tin streak...</div>
             </div>
 
             <hr class="my-6">
@@ -123,6 +129,39 @@
             document.getElementById("profileUsername").textContent = ten_dang_nhap;
             document.getElementById("profileEmail").textContent = email;
         });
+
+        // Follow / Block handlers
+        document.getElementById('followBtn').addEventListener('click', async () => {
+            const target = parseInt(document.getElementById('profileTargetId').value);
+            if(!target) return alert('Nhập target user id');
+            const res = await fetch(`/api/user/${target}/follow`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: parseInt(localStorage.getItem('id_nguoi_dung')||0) }) });
+            const d = await res.json();
+            alert(d.status === 'success' ? `Action: ${d.action}` : `Error: ${d.message}`);
+        });
+
+        document.getElementById('blockBtn').addEventListener('click', async () => {
+            const target = parseInt(document.getElementById('profileTargetId').value);
+            if(!target) return alert('Nhập target user id');
+            const res = await fetch(`/api/user/${target}/block`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ user_id: parseInt(localStorage.getItem('id_nguoi_dung')||0) }) });
+            const d = await res.json();
+            alert(d.status === 'success' ? `Action: ${d.action}` : `Error: ${d.message}`);
+        });
+
+        // Load streak info via notifications endpoint
+        (async function loadStreak(){
+            const id = parseInt(localStorage.getItem('id_nguoi_dung')||0);
+            const el = document.getElementById('streakInfo');
+            if(!id) { el.textContent = 'Bạn chưa đăng nhập'; return; }
+            try{
+                const res = await fetch(`/api/user/notifications/${id}`);
+                const d = await res.json();
+                if(d.status === 'success'){
+                    const s = d.counts && d.counts.streak_days ? d.counts.streak_days : 0;
+                    const pts = d.counts && d.counts.streak_points ? d.counts.streak_points : 0;
+                    el.textContent = `Streak: ${s} ngày • Điểm streak: ${pts}`;
+                } else el.textContent = 'Không tải được streak';
+            }catch(err){ el.textContent = 'Lỗi tải streak'; }
+        })();
 
         // Xử lý đổi ảnh đại diện
         document.getElementById("avatarInput").addEventListener("change", function() {

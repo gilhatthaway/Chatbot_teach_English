@@ -6,7 +6,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 MIGRATIONS = [
     "migration_02_update_table",
-    "migration_03_update_table_nguoi_dung"
+    "migration_03_update_table_nguoi_dung",
+    "migration_07_create_community_tables",
+    "migration_08_create_admin_actions"
 ]
 
 def run(direction="up"):

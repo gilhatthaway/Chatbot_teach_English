@@ -103,6 +103,7 @@
             infoEl.innerHTML = `
     <p class="font-semibold text-slate-800">${exam.tieu_de}</p>
     <p class="text-slate-500">${exam.mo_ta || ""}</p>
+    <p class="text-sm text-slate-500 mt-2">Thời lượng: ${exam.thoi_luong || 60} phút · Phần thi: ${exam.cau_hoi && exam.cau_hoi.length ? [...new Set(exam.cau_hoi.map(q => q.phan_thi || "reading"))].join(", ") : "-"}</p>
   `;
 
             contentEl.innerHTML = "";
@@ -143,7 +144,7 @@
     card.innerHTML = `
       <div class="flex items-start justify-between gap-3">
         <div>
-          <p class="text-sm text-slate-500">Câu ${idx + 1} · ${q.muc_do || ""}</p>
+          <p class="text-sm text-slate-500">Câu ${idx + 1} · ${q.muc_do || ""} · ${(q.phan_thi || "reading").charAt(0).toUpperCase() + (q.phan_thi || "reading").slice(1)}</p>
           <p class="font-medium text-slate-900">${q.noi_dung}</p>
         </div>
         <span class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded">${q.loai_cau_hoi}</span>
@@ -185,9 +186,10 @@
                   <p class="font-semibold text-slate-900">${ex.tieu_de || "Không có tiêu đề"}</p>
                   <p class="text-sm text-slate-500">${ex.mo_ta || ""}</p>
                 </div>
-                <span class="text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded whitespace-nowrap">
-                  ${ex.so_cau || 0} câu
-                </span>
+                <div class="text-right">
+                  <div class="text-xs text-slate-500">${ex.so_cau || 0} câu</div>
+                  <div class="text-xs text-slate-500">${ex.thoi_luong || 60} phút</div>
+                </div>
               </div>
               <div class="flex items-center justify-between pt-2">
                 <p class="text-xs text-slate-500">Ngày tạo: ${ex.ngay_tao || "-"}</p>
@@ -266,17 +268,22 @@
 
   statusEl.textContent = "Đang nộp bài...";
   try {
-    const res = await fetch(`/gettall/exams/${currentExam.id_kt}/submit`, {
+    const res = await fetch("/exam/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id_nguoi_dung: userId, bai_lam: baiLam })
+      body: JSON.stringify({ id_nguoi_dung: userId, id_kt: currentExam.id_kt, bai_lam: baiLam })
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Không thể lưu kết quả");
 
-    statusEl.textContent =
-      `🎉 Điểm: ${data.result.diem} (${data.result.so_cau_dung}/${data.result.tong_cau} câu đúng)`;
+    if (data.status === "pending") {
+      statusEl.textContent = `✅ Bài đã nộp thành công. Hệ thống sẽ chấm điểm sau khoảng 15 phút.`;
+    } else if (data.status === "success") {
+      statusEl.textContent = `🎉 Điểm: ${data.diem || 0}`;
+    } else {
+      statusEl.textContent = data.message || "✅ Đã nộp bài. Vui lòng chờ chấm điểm.";
+    }
   } catch (err) {
     statusEl.textContent = `❌ ${err.message}`;
   }

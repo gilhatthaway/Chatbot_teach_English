@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz - AI Learning Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-white to-indigo-50 min-h-screen text-slate-800">
+    <header class="bg-white/80 backdrop-blur border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-semibold">QZ</div>
+                <div>
+                    <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Quiz Center</p>
+                    <p class="font-semibold text-slate-900">Luyện quiz hấp dẫn</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="homeBtn" class="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition text-sm">Trang chủ</button>
+                <button id="logoutBtn" class="px-4 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition text-sm">Đăng xuất</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-sm text-purple-600 font-semibold">Quiz</p>
+                        <h1 class="text-3xl font-bold text-slate-900">Chọn quiz và bắt đầu</h1>
+                    </div>
+                    <span class="px-3 py-2 rounded-full bg-purple-50 text-purple-700 text-sm font-semibold">15 câu | Vocabulary & Grammar</span>
+                </div>
+                <p class="text-slate-500">Hoàn thành đúng ít nhất 2/3 nhận flashcard ngẫu nhiên và cộng streak. Sai nhiều quá sẽ có lời khích lệ tinh thần.</p>
+            </div>
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-[320px_1fr]">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+                <h2 class="text-xl font-semibold text-slate-900">Danh sách quiz</h2>
+                <p id="listStatus" class="text-sm text-slate-500"></p>
+                <div id="quizList" class="space-y-3"></div>
+                <button id="reloadListBtn" class="w-full px-4 py-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Tải lại danh sách</button>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-xl font-semibold text-slate-900">Bài quiz đang làm</h2>
+                        <p class="text-sm text-slate-500">Chọn quiz bên trái để bắt đầu trả lời.</p>
+                    </div>
+                    <div id="timer" class="hidden px-4 py-2 rounded-xl bg-red-100 text-red-700 font-semibold text-sm">
+                        ⏱️ Còn lại: <span id="timeLeft">00:00</span>
+                    </div>
+                    <button id="submitQuizBtn" class="px-4 py-3 rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition">Nộp quiz</button>
+                </div>
+                <div id="quizInfo" class="space-y-3 text-sm text-slate-600">Chưa chọn quiz.</div>
+                <div id="quizContent" class="space-y-4 max-h-[540px] overflow-y-auto pr-2"></div>
+                <p id="submitStatus" class="text-sm text-slate-500"></p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentQuiz = null;
+        let userId = null;
+        let timerInterval = null;
+        let timeLeft = 0;
+
+        function ensureAuth() {
+            const storedId = localStorage.getItem('id_nguoi_dung');
+            const storedName = localStorage.getItem('ten_dang_nhap');
+            if (!storedId || !storedName) {
+                alert('Vui lòng đăng nhập để tiếp tục');
+                window.location.href = '/login';
+                return;
+            }
+            userId = parseInt(storedId, 10);
+            document.getElementById('listStatus').textContent = `Xin chào ${storedName}`;
+        }
+
+        function startTimer(durationMinutes) {
+            if (timerInterval) clearInterval(timerInterval);
+            timeLeft = durationMinutes * 60; // Chuyển sang giây
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Hết thời gian! Quiz sẽ được nộp tự động.');
+                    submitQuiz();
+                }
+            }, 1000);
+
+            document.getElementById('timer').classList.remove('hidden');
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timeLeft').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('timer').classList.add('hidden');
+        }
+
+        function renderQuiz(quiz) {
+            const infoEl = document.getElementById('quizInfo');
+            const contentEl = document.getElementById('quizContent');
+            contentEl.innerHTML = '';
+
+            if (!quiz) {
+                infoEl.textContent = 'Chưa chọn quiz.';
+                return;
+            }
+
+            infoEl.innerHTML = `
+                <p class="font-semibold text-slate-900">${quiz.tieu_de}</p>
+                <p class="text-slate-500">${quiz.mo_ta || ''}</p>
+                <p class="text-sm text-slate-500">${quiz.so_cau || 0} câu · Thời gian: ${quiz.duration_minutes || 20} phút · Ngày tạo: ${new Date(quiz.ngay_tao).toLocaleDateString()}</p>
+            `;
+
+            (quiz.questions || []).forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = 'border border-slate-200 rounded-2xl p-4 bg-slate-50';
+                const label = q.phan_loai === 'grammar' ? 'Ngữ pháp' : 'Từ vựng';
+
+                let answerHtml = '';
+                if (Array.isArray(q.options) && q.options.length > 0) {
+                    answerHtml = q.options.map((opt, optIndex) => `
+                        <label class="flex items-center gap-2 text-sm text-slate-800">
+                            <input type="radio" name="q-${q.id_question}" value="${optIndex}" class="h-4 w-4 text-purple-600" />
+                            <span>${opt}</span>
+                        </label>
+                    `).join('');
+                    answerHtml = `<div class="space-y-2">${answerHtml}</div>`;
+                } else {
+                    const inputType = q.loai_quiz === 'rewrite_sentence' || q.loai_quiz === 'fill_blank' ? 'textarea' : 'input';
+                    if (inputType === 'textarea') {
+                        answerHtml = `
+                            <textarea name="q-${q.id_question}" rows="3" placeholder="Nhập câu trả lời..." class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                        `;
+                    } else {
+                        answerHtml = `
+                            <input name="q-${q.id_question}" type="text" placeholder="Nhập đáp án..." class="w-full rounded-xl border border-slate-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                        `;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-sm text-slate-500">Câu ${idx + 1} · ${label} · ${q.loai_quiz || ''}</p>
+                            <p class="font-medium text-slate-900 mt-2">${q.noi_dung}</p>
+                            ${q.hint ? `<p class="mt-2 text-sm text-slate-500">Gợi ý: ${q.hint}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="mt-4">${answerHtml}</div>
+                `;
+                contentEl.appendChild(card);
+            });
+        }
+
+        async function fetchQuizList() {
+            const statusEl = document.getElementById('listStatus');
+            const listEl = document.getElementById('quizList');
+            statusEl.textContent = 'Đang tải danh sách quiz...';
+            listEl.innerHTML = '';
+            try {
+                const res = await fetch('/quizzes/list');
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Không thể tải danh sách quiz');
+                const quizzes = data.quizzes || [];
+                if (quizzes.length === 0) {
+                    statusEl.textContent = 'Chưa có quiz nào.';
+                    return;
+                }
+                statusEl.textContent = `Có ${quizzes.length} quiz.`;
+                quizzes.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = 'border border-slate-200 rounded-2xl p-4 bg-white hover:shadow-sm transition';
+                    card.innerHTML = `
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="font-semibold text-slate-900">${q.tieu_de}</p>
+                                <p class="text-sm text-slate-500 mt-1">${q.mo_ta || ''}</p>
+                            </div>
+                            <button class="px-3 py-2 rounded-xl bg-purple-600 text-white text-sm hover:bg-purple-700" data-id="${q.id_quiz}">Chọn</button>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500">${q.so_cau || 0} câu · ${new Date(q.ngay_tao).toLocaleDateString()}</p>
+                    `;
+                    listEl.appendChild(card);
+                });
+                listEl.querySelectorAll('button[data-id]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const id = btn.getAttribute('data-id');
+                        await loadQuizById(id);
+                    });
+                });
+            } catch (err) {
+                statusEl.textContent = `❌ ${err.message}`;
+            }
+        }
+
+        async function loadQuizById(quizId) {
+            const infoEl = document.getElementById('submitStatus');
+            infoEl.textContent = 'Đang tải quiz...';
+            try {
+                const res = await fetch(`/quiz/${quizId}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Không tìm thấy quiz');
+                currentQuiz = data.quiz;
+                renderQuiz(currentQuiz);
+                startTimer(currentQuiz.duration_minutes || 20);
+                infoEl.textContent = 'Quiz đã sẵn sàng. Bắt đầu trả lời nhé!';
+            } catch (err) {
+                infoEl.textContent = `❌ ${err.message}`;
+                currentQuiz = null;
+                renderQuiz(null);
+                stopTimer();
+            }
+        }
+
+        async function submitQuiz() {
+            stopTimer(); // Dừng timer khi nộp quiz
+            const statusEl = document.getElementById('submitStatus');
+            if (!currentQuiz) {
+                statusEl.textContent = '❌ Vui lòng chọn quiz trước khi nộp.';
+                return;
+            }
+
+            const answers = (currentQuiz.questions || []).map(q => {
+                const key = `q-${q.id_question}`;
+                const selected = document.querySelector(`input[name='${key}']:checked`);
+                if (selected) {
+                    return { id_question: q.id_question, dap_an_chon: [parseInt(selected.value, 10)] };
+                }
+                const textInput = document.querySelector(`textarea[name='${key}'], input[name='${key}']`);
+                return { id_question: q.id_question, tra_loi: textInput ? textInput.value.trim() : '' };
+            });
+
+            statusEl.textContent = 'Đang nộp quiz...';
+            try {
+                const res = await fetch('/quiz/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_nguoi_dung: userId, id_quiz: currentQuiz.id_quiz, bai_lam: answers })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Không thể nộp quiz');
+                const result = data.result || {};
+                statusEl.textContent = result.message || 'Đã nộp quiz.';
+            } catch (err) {
+                statusEl.textContent = `❌ ${err.message}`;
+            }
+        }
+
+        document.getElementById('reloadListBtn').addEventListener('click', fetchQuizList);
+        document.getElementById('submitQuizBtn').addEventListener('click', submitQuiz);
+        document.getElementById('homeBtn').addEventListener('click', () => window.location.href = '/home');
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/login';
+        });
+
+        ensureAuth();
+        fetchQuizList();
+    </script>
+</body>
+</html>

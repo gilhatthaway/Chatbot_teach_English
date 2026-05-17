@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Streak - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8 bg-white p-4 rounded-lg shadow">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Quản lý Streak & Flashcards</h1>
+                <p class="text-sm text-slate-500">Chỉnh sửa thủ công streak, reset, quản lý phần thưởng</p>
+            </div>
+            <div class="flex gap-2">
+                <span class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700">👤 <span id="adminName">Admin</span></span>
+                <a href="/ad_user" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-800 hover:bg-slate-200 transition">Quản lý users</a>
+                <a href="/ad_lesson" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-800 hover:bg-slate-200 transition">Quản lý bài học</a>
+                <a href="/home" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-800 hover:bg-slate-200 transition">Trang chính</a>
+                <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600">Đăng xuất</button>
+            </div>
+        </div>
+        <div class="mb-4">
+            <a href="/admin/dashboard" class="px-3 py-2 bg-slate-100 rounded-lg hover:bg-slate-200">⬅ Quay lại</a>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-4 flex gap-2 border-b border-slate-200">
+            <button class="tab-btn active px-4 py-2 border-b-2 border-blue-600 text-blue-600 font-medium" data-tab="streaks">
+                🔥 Quản lý Streak
+            </button>
+            <button class="tab-btn px-4 py-2 border-b-2 border-transparent text-slate-600 hover:text-slate-900" data-tab="rewards">
+                🎁 Quản lý Flashcards
+            </button>
+        </div>
+
+        <!-- Streak Management Tab -->
+        <div id="streaks-tab" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Danh sách Streak Users</h2>
+                    <input type="text" id="searchStreakInput" placeholder="Tìm user..." class="px-3 py-2 border border-slate-300 rounded-lg w-48">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="text-left py-3 px-4 font-semibold">ID</th>
+                                <th class="text-left py-3 px-4 font-semibold">Tên đăng nhập</th>
+                                <th class="text-left py-3 px-4 font-semibold">Email</th>
+                                <th class="text-left py-3 px-4 font-semibold">Streak</th>
+                                <th class="text-left py-3 px-4 font-semibold">Cập nhật cuối</th>
+                                <th class="text-left py-3 px-4 font-semibold">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="streakTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rewards Management Tab -->
+        <div id="rewards-tab" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <!-- Add Reward Form -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="font-semibold text-lg mb-4">Thêm Flashcard</h3>
+                    <div class="space-y-3">
+                        <input type="number" id="rewardUserId" placeholder="ID user" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                        <input type="text" id="rewardWord" placeholder="Từ vựng (EN)" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                        <input type="text" id="rewardMeaning" placeholder="Ý nghĩa (VN)" class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                        <input type="text" id="rewardReason" placeholder="Lý do" class="w-full px-3 py-2 border border-slate-300 rounded-lg" value="Admin manual">
+                        <button id="addRewardBtn" class="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Thêm</button>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="font-semibold text-lg mb-4">Thống kê</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span>Tổng rewards:</span>
+                            <span id="totalRewards" class="font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Hôm nay:</span>
+                            <span id="rewardsToday" class="font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Users nhận reward:</span>
+                            <span id="usersWithRewards" class="font-bold text-lg">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Rewards -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="font-semibold text-lg mb-4">Tìm Rewards</h3>
+                    <div class="space-y-3">
+                        <input type="text" id="searchRewardsInput" placeholder="Tên user..." class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                        <button id="filterRewardsBtn" class="w-full px-3 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700">Tìm</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rewards Table -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold mb-4">Danh sách Flashcard Rewards</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="text-left py-3 px-4 font-semibold">ID</th>
+                                <th class="text-left py-3 px-4 font-semibold">User</th>
+                                <th class="text-left py-3 px-4 font-semibold">Từ vựng</th>
+                                <th class="text-left py-3 px-4 font-semibold">Ý nghĩa</th>
+                                <th class="text-left py-3 px-4 font-semibold">Lý do</th>
+                                <th class="text-left py-3 px-4 font-semibold">Ngày tặng</th>
+                                <th class="text-left py-3 px-4 font-semibold">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rewardsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="editStreakModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 class="text-lg font-semibold mb-4">Cập nhật Streak</h3>
+            <input type="number" id="editStreakValue" placeholder="Giá trị streak mới" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-4">
+            <div class="flex gap-2">
+                <button id="saveStreakBtn" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Lưu</button>
+                <button id="cancelEditBtn" class="flex-1 px-3 py-2 bg-slate-300 text-slate-800 rounded-lg hover:bg-slate-400">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentEditUserId = null;
+        let allStreaks = [];
+        let allRewards = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const ten_dang_nhap = localStorage.getItem('ten_dang_nhap');
+            const vai_tro = localStorage.getItem('vai_tro');
+
+            if (!ten_dang_nhap || vai_tro !== 'admin') {
+                window.location.href = '/login';
+                return;
+            }
+
+            document.getElementById('adminName').textContent = ten_dang_nhap;
+
+            // Load streaks
+            await loadStreaks();
+            await loadRewards();
+
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                        b.classList.add('border-transparent', 'text-slate-600');
+                    });
+                    btn.classList.add('active', 'border-blue-600', 'text-blue-600');
+                    btn.classList.remove('border-transparent', 'text-slate-600');
+
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    document.getElementById(btn.dataset.tab + '-tab').classList.remove('hidden');
+                });
+            });
+
+            // Event listeners
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.clear();
+                window.location.href = '/login';
+            });
+
+            document.getElementById('searchStreakInput').addEventListener('input', filterStreaks);
+            document.getElementById('filterRewardsBtn').addEventListener('click', filterRewards);
+            document.getElementById('addRewardBtn').addEventListener('click', addReward);
+            document.getElementById('cancelEditBtn').addEventListener('click', () => {
+                document.getElementById('editStreakModal').classList.add('hidden');
+            });
+            document.getElementById('saveStreakBtn').addEventListener('click', saveStreak);
+        });
+
+        async function loadStreaks() {
+            const response = await fetch('/api/admin/streaks/all');
+            const data = await response.json();
+            allStreaks = data.users || [];
+            renderStreaks(allStreaks);
+        }
+
+        function renderStreaks(streaks) {
+            const tbody = document.getElementById('streakTableBody');
+            tbody.innerHTML = '';
+            streaks.forEach(user => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-slate-200 hover:bg-slate-50';
+                row.innerHTML = `
+                    <td class="py-3 px-4">${user.id_nguoi_dung}</td>
+                    <td class="py-3 px-4 font-medium">${user.ten_dang_nhap}</td>
+                    <td class="py-3 px-4 text-slate-600">${user.email}</td>
+                    <td class="py-3 px-4"><span class="font-bold text-lg text-blue-600">${user.streak_count}</span></td>
+                    <td class="py-3 px-4 text-slate-600">${user.last_streak_date || '-'}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="openEditStreak(${user.id_nguoi_dung}, ${user.streak_count})" class="px-2 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 mr-1">✏️ Sửa</button>
+                        <button onclick="resetStreak(${user.id_nguoi_dung})" class="px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200">🔄 Reset</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterStreaks() {
+            const query = document.getElementById('searchStreakInput').value.toLowerCase();
+            const filtered = allStreaks.filter(u => 
+                u.ten_dang_nhap.toLowerCase().includes(query) || 
+                u.email.toLowerCase().includes(query)
+            );
+            renderStreaks(filtered);
+        }
+
+        function openEditStreak(userId, currentValue) {
+            currentEditUserId = userId;
+            document.getElementById('editStreakValue').value = currentValue;
+            document.getElementById('editStreakModal').classList.remove('hidden');
+        }
+
+        async function saveStreak() {
+            const newValue = parseInt(document.getElementById('editStreakValue').value);
+            if (isNaN(newValue) || newValue < 0) {
+                alert('Giá trị không hợp lệ');
+                return;
+            }
+
+            const response = await fetch(`/api/admin/streak/${currentEditUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ streak_count: newValue })
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                document.getElementById('editStreakModal').classList.add('hidden');
+                await loadStreaks();
+            }
+        }
+
+        async function resetStreak(userId) {
+            if (!confirm('Bạn chắc chắn muốn reset streak?')) return;
+            const response = await fetch(`/api/admin/streak/${userId}/reset`, { method: 'POST' });
+            const result = await response.json();
+            if (result.status === 'success') {
+                await loadStreaks();
+            }
+        }
+
+        async function loadRewards() {
+            const response = await fetch('/api/admin/rewards/all');
+            const data = await response.json();
+            allRewards = data.rewards || [];
+            renderRewards(allRewards);
+            updateRewardStats();
+        }
+
+        function renderRewards(rewards) {
+            const tbody = document.getElementById('rewardsTableBody');
+            tbody.innerHTML = '';
+            rewards.forEach(reward => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-slate-200 hover:bg-slate-50';
+                row.innerHTML = `
+                    <td class="py-3 px-4">${reward.id_reward}</td>
+                    <td class="py-3 px-4 font-medium">${reward.ten_dang_nhap}</td>
+                    <td class="py-3 px-4">${reward.tu_vung}</td>
+                    <td class="py-3 px-4 text-slate-600">${reward.y_nghia}</td>
+                    <td class="py-3 px-4 text-slate-600 text-xs">${reward.ly_do}</td>
+                    <td class="py-3 px-4 text-slate-600">${new Date(reward.issued_at).toLocaleDateString('vi-VN')}</td>
+                    <td class="py-3 px-4">
+                        <button onclick="deleteReward(${reward.id_reward})" class="px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateRewardStats() {
+            document.getElementById('totalRewards').textContent = allRewards.length;
+            const today = new Date().toLocaleDateString('vi-VN');
+            const todayCount = allRewards.filter(r => new Date(r.issued_at).toLocaleDateString('vi-VN') === today).length;
+            document.getElementById('rewardsToday').textContent = todayCount;
+            const uniqueUsers = new Set(allRewards.map(r => r.id_nguoi_dung)).size;
+            document.getElementById('usersWithRewards').textContent = uniqueUsers;
+        }
+
+        function filterRewards() {
+            const query = document.getElementById('searchRewardsInput').value.toLowerCase();
+            const filtered = allRewards.filter(r => 
+                r.ten_dang_nhap.toLowerCase().includes(query)
+            );
+            renderRewards(filtered);
+        }
+
+        async function addReward() {
+            const userId = parseInt(document.getElementById('rewardUserId').value);
+            const word = document.getElementById('rewardWord').value.trim();
+            const meaning = document.getElementById('rewardMeaning').value.trim();
+            const reason = document.getElementById('rewardReason').value.trim();
+
+            if (!userId || !word || !meaning) {
+                alert('Vui lòng điền đầy đủ thông tin');
+                return;
+            }
+
+            const response = await fetch('/api/admin/reward/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_nguoi_dung: userId, tu_vung: word, y_nghia: meaning, ly_do: reason })
+            });
+            const result = await response.json();
+            if (result.status === 'success') {
+                document.getElementById('rewardUserId').value = '';
+                document.getElementById('rewardWord').value = '';
+                document.getElementById('rewardMeaning').value = '';
+                document.getElementById('rewardReason').value = 'Admin manual';
+                await loadRewards();
+            }
+        }
+
+        async function deleteReward(rewardId) {
+            if (!confirm('Xóa flashcard này?')) return;
+            const response = await fetch(`/api/admin/reward/${rewardId}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.status === 'success') {
+                await loadRewards();
+            }
+        }
+    </script>
+</body>
+
+</html>

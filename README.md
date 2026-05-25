@@ -378,3 +378,9 @@ save_mysql.py
 
 ######### CHẠY DATA###
 Chạy file save_mysql trước rồi chạy các migrat
+
+Đóng Góp Dự Án & Bản Quyền
+
+Hệ thống Chatbot_teach_English được phát triển nhằm mục tiêu cải cách phương pháp học tập tiếng anh thô than bằng công nghệ hiện đại. Mọi đóng góp, báo lỗi vui lòng mở Issue hoặc gửi Pull Request trực tiếp trên repository này.
+
+© 2026 Chatbot_teach_English Project - Đại học Thủ Dầu Một. Hệ thống được phát triển với tình yêu mãnh liệt học Tiếng Anh và niềm đam mê công nghệ.
